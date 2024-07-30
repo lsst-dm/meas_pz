@@ -27,24 +27,18 @@ __all__ = [
 ]
 
 from typing import Any
-import numpy as np
-from pandas import DataFrame
 
-import ceci
-from ceci.config import StageParameter as CeciParam
-from ceci.config import StageConfig as CeciStageConfig
-
-from rail.interfaces import PZFactory
-
-import lsst.pipe.base.connectionTypes as cT
 import lsst.pex.config as pexConfig
+import lsst.pipe.base.connectionTypes as cT
+import numpy as np
+from ceci.config import StageConfig as CeciStageConfig
+from ceci.config import StageParameter as CeciParam
+from ceci.stage import PipelineStage as CeciPipelineStage
 from lsst.daf.butler import DeferredDatasetHandle
-from lsst.pipe.base import (
-    PipelineTask,
-    PipelineTaskConfig,
-    PipelineTaskConnections,
-    Struct,
-)
+from lsst.pipe.base import (PipelineTask, PipelineTaskConfig,
+                            PipelineTaskConnections, Struct)
+from pandas import DataFrame
+from rail.interfaces import PZFactory
 
 
 class EstimatePZConnections(
@@ -114,7 +108,7 @@ class EstimatePZConfigBase(
 
     @classmethod
     def _make_fields(cls):
-        stage_class = ceci.PipelineStage.get_stage(
+        stage_class = CeciPipelineStage.get_stage(
             cls.estimator_class, cls.estimator_module
         )
         for key, val in stage_class.config_options.items():
