@@ -21,7 +21,9 @@
 
 __all__ = [
     "EsimatePZTaskBase",
-    "EstimatePZ_TrainZConfig",
+    "EstimatePZTrainZConfig",
+    "EsimatePZKNNTask",
+    "EstimatePZKNNConfig",
 ]
 
 from typing import Any
@@ -37,25 +39,36 @@ from rail.interfaces import PZFactory
 import lsst.pipe.base.connectionTypes as cT
 import lsst.pex.config as pexConfig
 from lsst.daf.butler import DeferredDatasetHandle
-from lsst.pipe.base import PipelineTask, PipelineTaskConfig, PipelineTaskConnections, Struct
+from lsst.pipe.base import (
+    PipelineTask,
+    PipelineTaskConfig,
+    PipelineTaskConnections,
+    Struct,
+)
 
 
-class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "tract", "patch")):
-    
+class EstimatePZConnections(
+    PipelineTaskConnections, dimensions=("instrument", "tract", "patch")
+):
+
     pzModel = cT.PrerequisiteInput(
         doc="Model for PZ Estimation",
         name="",
         storageClass="pickle",
         dimensions=["instrument"],
         isCalibration=True,
-        #lookupFunction=_pzModelLookup,
+        # lookupFunction=_pzModelLookup,
     )
-    
+
     objectTable = cT.Input(
         doc="Object table in parquet format, per patch",
         name="objectTable",
         storageClass="DataFrame",
-        dimensions=("instrument", "tract", "patch",),
+        dimensions=(
+            "instrument",
+            "tract",
+            "patch",
+        ),
         deferLoad=True,
     )
 
@@ -63,49 +76,75 @@ class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "
         doc="Per-object p(z) estimates, per patch",
         name="pzEnsemble_tract",
         storageClass="DataFrame",
-        dimensions=("instrument", "tract", "patch",),
+        dimensions=(
+            "instrument",
+            "tract",
+            "patch",
+        ),
     )
 
 
-class EstimatePZConfigBase(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
-    
+class EstimatePZConfigBase(
+    PipelineTaskConfig, pipelineConnections=EstimatePZConnections
+):
+
     estimator_class = None
     estimator_module = None
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
-    mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)    
+    mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
 
     @classmethod
-    def _make_fields(cls):    
-        stage_class = ceci.PipelineStage.get_stage(cls.estimator_class, cls.estimator_module)
+    def _make_fields(cls):
+        stage_class = ceci.PipelineStage.get_stage(
+            cls.estimator_class, cls.estimator_module
+        )
         for key, val in stage_class.config_options.items():
             if isinstance(val, CeciStageConfig):
                 val = val.get(key)
             if isinstance(val, CeciParam):
                 if val.dtype in [int, float, str]:
-                    setattr(cls, key, pexConfig.Field(doc=val.msg, dtype=val.dtype, default=val.default))
+                    setattr(
+                        cls,
+                        key,
+                        pexConfig.Field(
+                            doc=val.msg, dtype=val.dtype, default=val.default
+                        ),
+                    )
                 elif val.dtype in [list]:
-                    setattr(cls, key, pexConfig.ListField(doc=val.msg, dtype=str, default=val.default))
+                    setattr(
+                        cls,
+                        key,
+                        pexConfig.ListField(
+                            doc=val.msg, dtype=str, default=val.default
+                        ),
+                    )
                 elif val.dtype in [dict]:
-                    setattr(cls, key, pexConfig.DictField(doc=val.msg, keytype=str, default=val.default))
-                    
+                    setattr(
+                        cls,
+                        key,
+                        pexConfig.DictField(
+                            doc=val.msg, keytype=str, default=val.default
+                        ),
+                    )
 
-class EstimatePZ_TrainZConfig(EstimatePZConfigBase):
-    """Config for EstimateTZ_TrainZ"""
 
-    estimator_class = 'TrainZEstimator'
-    estimator_module = 'rail.estimation.algos.train_z'
+class EstimatePZTrainZConfig(EstimatePZConfigBase):
+    """Config for EstimateTZTrainZ"""
 
-EstimatePZ_TrainZConfig._make_fields()
-    
+    estimator_class = "TrainZEstimator"
+    estimator_module = "rail.estimation.algos.train_z"
+
+
+EstimatePZTrainZConfig._make_fields()
 
 
 class EsimatePZTaskBase(PipelineTask):
 
-    ConfigClass = EstimatePZ_TrainZConfig
+    ConfigClass = EstimatePZTrainZConfig
     _DefaultName = "estimate_pz"
 
-    mag_conv = np.log(10)*0.4
+    mag_conv = np.log(10) * 0.4
 
     @staticmethod
     def _flux_to_mag(
@@ -113,7 +152,7 @@ class EsimatePZTaskBase(PipelineTask):
         mag_offset: float,
         nondetect_val: float,
     ) -> np.array:
-        """ Convert flux to magnitude 
+        """Convert flux to magnitude
 
         Parameters
         ----------
@@ -131,9 +170,9 @@ class EsimatePZTaskBase(PipelineTask):
         mags : np.array
             Magnitude values
         """
-        vals = -2.5*np.log10(flux_vals) + mag_offset,
+        vals = (-2.5 * np.log10(flux_vals) + mag_offset,)
         return np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
-                        
+
     @staticmethod
     def _flux_err_to_mag_err(
         flux_vals: np.array,
@@ -141,7 +180,7 @@ class EsimatePZTaskBase(PipelineTask):
         mag_conv: float,
         nondetect_val: float,
     ) -> np.array:
-        """ Config flux error to magnitude error
+        """Config flux error to magnitude error
 
         Parameters
         ----------
@@ -162,31 +201,31 @@ class EsimatePZTaskBase(PipelineTask):
         mags_errs : np.array
             Magnitude errors
         """
-        vals = flux_err_vals / (flux_vals*mag_conv)
+        vals = flux_err_vals / (flux_vals * mag_conv)
         return np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
 
     def _get_flux_names(self) -> dict[str, str]:
-        """ Return a dict mapping band to flux column name """
-        return {band: f'{band}_gaap1p0Flux' for band in 'ugrizy'}
+        """Return a dict mapping band to flux column name"""
+        return {band: f"{band}_gaap1p0Flux" for band in "ugrizy"}
 
     def _get_flux_err_names(self) -> dict[str, str]:
-        """ Return a dict mapping band to flux error column name """
-        return {band: f'{band}_gaap1p0FluxErr' for band in 'ugrizy'}
+        """Return a dict mapping band to flux error column name"""
+        return {band: f"{band}_gaap1p0FluxErr" for band in "ugrizy"}
 
     def _get_mag_names(self) -> dict[str, str]:
-        """ Return a dict mapping band to mag column name """
-        return {band: f'mag_{band}_lsst' for band in 'ugrizy'}
+        """Return a dict mapping band to mag column name"""
+        return {band: f"mag_{band}_lsst" for band in "ugrizy"}
 
     def _get_mag_err_names(self) -> dict[str, str]:
-        """ Return a dict mapping band to mag error column name """
-        return {band: f'mag_err_{band}_lsst' for band in 'ugrizy'}
-    
+        """Return a dict mapping band to mag error column name"""
+        return {band: f"mag_err_{band}_lsst" for band in "ugrizy"}
+
     def _get_mags_and_errs(
         self,
         fluxes: DataFrame,
         mag_offset: float,
     ) -> dict[str, np.array]:
-        """ Fill and return a numpy dict with mags and mag errors
+        """Fill and return a numpy dict with mags and mag errors
 
         Parameters
         ----------
@@ -210,7 +249,7 @@ class EsimatePZTaskBase(PipelineTask):
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
         for band in flux_names.keys():
-            fluxVals =  fluxes[flux_names[band]]
+            fluxVals = fluxes[flux_names[band]]
             fluxErrVals = fluxes[flux_err_names[band]]
             mag_dict[mag_names[band]] = self._flux_to_mag(
                 fluxVals,
@@ -225,14 +264,14 @@ class EsimatePZTaskBase(PipelineTask):
                     self.config.nondetect_val,
                 )
         # return the dict with the mags
-        return mag_dict    
-    
+        return mag_dict
+
     def run(
         self,
         pzModel: dict[str, Any],
         objectTable: DeferredDatasetHandle,
     ) -> Struct:
-        """ Run a p(z) estimation algorithm
+        """Run a p(z) estimation algorithm
 
         Parameters
         ----------
@@ -245,13 +284,13 @@ class EsimatePZTaskBase(PipelineTask):
         Returns
         -------
         pz_pdfs: qp.Ensemble
-            Object with the p(z) pdfs        
-        """  
+            Object with the p(z) pdfs
+        """
         # pop the pipeline task config options
-        # so that we can pass the rest to RAIL        
+        # so that we can pass the rest to RAIL
         rail_kwargs = self.config.toDict().copy()
-        for key in ['saveLogOutput', 'stage_name', 'mag_offset', 'connections']:
-            rail_kwargs.pop(key)        
+        for key in ["saveLogOutput", "stage_name", "mag_offset", "connections"]:
+            rail_kwargs.pop(key)
 
         # Build the RAIL stage
         self._stage = PZFactory.build_cat_estimator_stage(
@@ -259,12 +298,14 @@ class EsimatePZTaskBase(PipelineTask):
             self.config.estimator_class,
             self.config.estimator_module,
             model_path=pzModel,
-            input_path='dummy.in',
+            input_path="dummy.in",
             **rail_kwargs,
         )
 
         # Get the list of columns we want to read from the object table
-        col_names = list(self._get_flux_names().values()) + list(self._get_flux_err_names().values())
+        col_names = list(self._get_flux_names().values()) + list(
+            self._get_flux_err_names().values()
+        )
         # Read those to a DataFrame
         fluxes = objectTable.get(parameters=dict(columns=col_names))
         n_obj = len(fluxes)
@@ -276,17 +317,17 @@ class EsimatePZTaskBase(PipelineTask):
         return Struct(pz_pdfs=pz_pdfs)
 
 
-class EstimatePZ_KNNConfig(EstimatePZConfigBase):
-    """Config for EstimatePZ_KNN"""
+class EstimatePZKNNConfig(EstimatePZConfigBase):
+    """Config for EstimatePZKNN"""
 
-    estimator_class = 'KNearNeighEstimator'
-    estimator_module = 'rail.estimation.algos.k_nearneigh'
+    estimator_class = "KNearNeighEstimator"
+    estimator_module = "rail.estimation.algos.k_nearneigh"
 
-EstimatePZ_KNNConfig._make_fields()
+
+EstimatePZKNNConfig._make_fields()
 
 
 class EsimatePZKNNTask(EsimatePZTaskBase):
 
-    ConfigClass = EstimatePZ_KNNConfig
+    ConfigClass = EstimatePZKNNConfig
     _DefaultName = "estimate_pz_knn"
-
