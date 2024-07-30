@@ -230,7 +230,7 @@ class EsimatePZTaskBase(PipelineTask):
     def run(
         self,
         pzModel: dict[str, Any],
-        objectTable, DeferredDatasetHandle,
+        objectTable: DeferredDatasetHandle,
     ) -> Struct:
         """ Run a p(z) estimation algorithm
 
