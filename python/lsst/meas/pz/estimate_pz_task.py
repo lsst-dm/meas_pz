@@ -50,6 +50,11 @@ from lsst.pipe.base import (
 class EstimatePZConnections(
     PipelineTaskConnections, dimensions=("instrument", "tract", "patch")
 ):
+    """Connections for tasks that make p(z) estimates
+
+    These will take pickled model file as a "calibration-like" input,
+    an objectTable as input, and create a p(z) file in 'qp' format.
+    """
 
     pzModel = cT.PrerequisiteInput(
         doc="Model for PZ Estimation",
@@ -87,6 +92,19 @@ class EstimatePZConnections(
 class EstimatePZConfigBase(
     PipelineTaskConfig, pipelineConnections=EstimatePZConnections
 ):
+    """Base class for configurations of p(z)
+    estimation pipetasks.
+
+    This class mostly just translates the RAIL configuration
+    parameters to pex.config parameters.
+
+    the `_make_fields` method will import the RAIL estimation stage
+    and loop through the stage config parameters and make corresponding
+    pex.config parameters.
+
+    Subclasses will just have to set
+    `estimator_class` and `estimator_module` and invoke _make_fields.
+    """
 
     estimator_class = None
     estimator_module = None
@@ -129,20 +147,18 @@ class EstimatePZConfigBase(
                     )
 
 
-class EstimatePZTrainZConfig(EstimatePZConfigBase):
-    """Config for EstimateTZTrainZ"""
-
-    estimator_class = "TrainZEstimator"
-    estimator_module = "rail.estimation.algos.train_z"
-
-
-EstimatePZTrainZConfig._make_fields()
-
-
 class EsimatePZTaskBase(PipelineTask):
+    """Base class for p(z) estimation
 
-    ConfigClass = EstimatePZTrainZConfig
-    _DefaultName = "estimate_pz"
+    This will provide almost all of the functionality
+    needed to run RAIL p(z) algorithms
+
+    Subclasses will just need to override
+    `ConfigClass` and `_DefaultName`
+    """
+
+    ConfigClass = None
+    _DefaultName = None
 
     mag_conv = np.log(10) * 0.4
 
@@ -317,8 +333,27 @@ class EsimatePZTaskBase(PipelineTask):
         return Struct(pz_pdfs=pz_pdfs)
 
 
+class EstimatePZTrainZConfig(EstimatePZConfigBase):
+    """Config for EstimatePZTrainZ
+
+    The TrainZ algorithm is really just a placeholder algorithm
+    that assigns exactly the same p(z) distribution to every
+    object.
+    """
+
+    estimator_class = "TrainZEstimator"
+    estimator_module = "rail.estimation.algos.train_z"
+
+
+EstimatePZTrainZConfig._make_fields()
+
+
 class EstimatePZKNNConfig(EstimatePZConfigBase):
-    """Config for EstimatePZKNN"""
+    """Config for EstimatePZKNN
+
+    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
+    for parameters and default values.
+    """
 
     estimator_class = "KNearNeighEstimator"
     estimator_module = "rail.estimation.algos.k_nearneigh"
@@ -327,7 +362,24 @@ class EstimatePZKNNConfig(EstimatePZConfigBase):
 EstimatePZKNNConfig._make_fields()
 
 
+class EsimatePZTrainZTask(EsimatePZTaskBase):
+    """Task that runs RAIL TrainZ algorithm for p(z) estimation
+
+    TrainZ is just a placeholder algorithm that assigns that same
+    p(z) distribution (taken from the input model file) to every object.
+    """
+
+    ConfigClass = EstimatePZTrainZConfig
+    _DefaultName = "estimate_pz_trainz"
+
+
 class EsimatePZKNNTask(EsimatePZTaskBase):
+    """Task that runs RAIL KNN algorithm for p(z) estimation
+
+    KNN estimates the p(z) distribution by taking
+    a weighted mixture of the nearest neigheboors in
+    color space.
+    """
 
     ConfigClass = EstimatePZKNNConfig
     _DefaultName = "estimate_pz_knn"
