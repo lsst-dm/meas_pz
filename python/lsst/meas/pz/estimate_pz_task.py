@@ -334,7 +334,7 @@ class EsimatePZTaskBase(PipelineTask):
 
 
 class EstimatePZTrainZConfig(EstimatePZConfigBase):
-    """Config for EstimatePZTrainZ
+    """Config for EstimatePZTrainZTask
 
     See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
     for parameters and default values.
@@ -348,7 +348,7 @@ EstimatePZTrainZConfig._make_fields()
 
 
 class EstimatePZKNNConfig(EstimatePZConfigBase):
-    """Config for EstimatePZKNN
+    """Config for EstimatePZKNNTask
 
     See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
     for parameters and default values.
