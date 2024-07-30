@@ -336,9 +336,8 @@ class EsimatePZTaskBase(PipelineTask):
 class EstimatePZTrainZConfig(EstimatePZConfigBase):
     """Config for EstimatePZTrainZ
 
-    The TrainZ algorithm is really just a placeholder algorithm
-    that assigns exactly the same p(z) distribution to every
-    object.
+    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
+    for parameters and default values.
     """
 
     estimator_class = "TrainZEstimator"
