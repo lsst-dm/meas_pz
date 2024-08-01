@@ -64,8 +64,8 @@ class EstimatePZConnections(
 
     pzModel = cT.PrerequisiteInput(
         doc="Model for PZ Estimation",
-        name="",
-        storageClass="pickle",
+        name="pzModel",
+        storageClass="PZModel",
         dimensions=["instrument"],
         isCalibration=True,
         # lookupFunction=_pzModelLookup,
@@ -85,8 +85,8 @@ class EstimatePZConnections(
 
     pzEnsemble = cT.Output(
         doc="Per-object p(z) estimates, per patch",
-        name="pzEnsemble_tract",
-        storageClass="DataFrame",
+        name="pzEnsemble",
+        storageClass="QPEnsemble",
         dimensions=(
             "instrument",
             "tract",
