@@ -59,9 +59,6 @@ class QPFormatter(FormatterV2):
     def read_from_local_file(
         self, path: str, component: str | None = None, expected_size: int = -1
     ) -> Any:
-        pytype = self.file_descriptor.storageClass.pytype
-        if not issubclass(pytype, qp.Ensemble):
-            raise TypeError(f"Python type {pytype} does not seem to be a qp.Ensemble")
         return qp.read(path)  # type: ignore
 
     def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:
