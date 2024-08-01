@@ -62,12 +62,7 @@ class QPFormatter(FormatterV2):
         pytype = self.file_descriptor.storageClass.pytype
         if not issubclass(pytype, qp.Ensemble):
             raise TypeError(f"Python type {pytype} does not seem to be a qp.Ensemble")
-        retval = qp.read(path)  # type: ignore
-        if not isinstance(retval, qp.Ensemble):
-            raise TypeError(
-                f"Read object {type(retval)} does not seem to be a qp.Ensemble"
-            )
-        return retval
+        return qp.read(path)  # type: ignore
 
     def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:
         in_memory_dataset.writeto(uri.ospath)
