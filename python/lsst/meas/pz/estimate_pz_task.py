@@ -20,12 +20,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
+    "EstimatePZAlgoConfigBase",
+    "EstimatePZAlgoTask",
     "EstimatePZTaskConfig",
     "EstimatePZTask",
-    "EstimatePZTrainZTask",
-    "EstimatePZKNNTask",
-    "EstimatePZTrainZConfig",
-    "EstimatePZKNNConfig",
 ]
 
 from typing import Any
@@ -49,8 +47,6 @@ from lsst.pipe.base import (
 )
 from pandas import DataFrame
 from rail.interfaces import PZFactory
-from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
-from rail.estimation.algos.train_z import TrainZEstimator
 
 
 class EstimatePZConnections(
@@ -383,69 +379,3 @@ class EstimatePZTask(PipelineTask):
     ) -> Struct:
         ret_struct = self.pz_algo.run(pzModel, objectTable)
         return Struct(pz_pdfs=ret_struct.pz_pdfs)
-
-
-class EstimatePZTrainZConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZTrainZTask
-
-    This will select and comnfigure the TrainZEsimator p(z)
-    estimation algorithm
-
-    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
-    for parameters and default values.
-    """
-
-    estimator_class = TrainZEstimator
-
-
-EstimatePZTrainZConfig._make_fields()
-
-
-class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNTask
-
-    This will select and comnfigure the KNearNeighEstimator p(z)
-    estimation algorithm
-
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
-    for parameters and default values.
-    """
-
-    estimator_class = KNearNeighEstimator
-
-
-EstimatePZKNNConfig._make_fields()
-
-
-class EstimatePZTrainZTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL TrainZ algorithm for p(z) estimation
-
-    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
-    for algorithm implementation.
-
-    TrainZ is just a placeholder algorithm that assigns that same
-    p(z) distribution (taken from the input model file) to every object.
-    """
-
-    ConfigClass = EstimatePZTrainZConfig
-
-    def _get_mags_and_errs(
-        self,
-        fluxes: DataFrame,
-        mag_offset: float,
-    ) -> dict[str, np.array]:
-        return dict(lsst_i_mag=fluxes["i_gaap1p0Flux"])
-
-
-class EstimatePZKNNTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL KNN algorithm for p(z) estimation
-
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
-    for algorithm implementation.
-
-    KNN estimates the p(z) distribution by taking
-    a weighted mixture of the nearest neigheboors in
-    color space.
-    """
-
-    ConfigClass = EstimatePZKNNConfig
