@@ -315,7 +315,7 @@ class EstimatePZAlgoTask(Task, ABC):
         self._stage = PZFactory.build_stage_instance(
             self.config.stage_name,
             self.config.estimator_class,
-            model_path=pzModel,
+            model_path=pzModel.data,
             input_path="dummy.in",
             **rail_kwargs,
         )
