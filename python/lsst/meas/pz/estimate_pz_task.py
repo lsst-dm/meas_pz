@@ -33,10 +33,16 @@ import lsst.pipe.base.connectionTypes as cT
 import numpy as np
 from ceci.config import StageConfig as CeciStageConfig
 from ceci.config import StageParameter as CeciParam
+
 # from ceci.stage import PipelineStage as CeciPipelineStage
 from lsst.daf.butler import DeferredDatasetHandle
-from lsst.pipe.base import (PipelineTask, PipelineTaskConfig,
-                            PipelineTaskConnections, Struct, Task)
+from lsst.pipe.base import (
+    PipelineTask,
+    PipelineTaskConfig,
+    PipelineTaskConnections,
+    Struct,
+    Task,
+)
 from pandas import DataFrame
 from rail.core.model import Model
 from rail.interfaces import PZFactory
@@ -206,7 +212,11 @@ class EstimatePZAlgoTask(Task, ABC):
         mags : np.array
             Magnitude values
         """
-        vals = np.where(np.isfinite(flux_vals), -2.5 * np.log10(flux_vals) + mag_offset, nondetect_val)
+        vals = np.where(
+            np.isfinite(flux_vals),
+            -2.5 * np.log10(flux_vals) + mag_offset,
+            nondetect_val,
+        )
         vals = np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
         return vals
 
@@ -311,8 +321,8 @@ class EstimatePZAlgoTask(Task, ABC):
                     fluxErrVals,
                     self.mag_conv,
                     self.config.nondetect_val,
-                )           
-                
+                )
+
         # return the dict with the mags
         return mag_dict
 
