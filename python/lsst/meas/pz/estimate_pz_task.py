@@ -206,8 +206,9 @@ class EstimatePZAlgoTask(Task, ABC):
         mags : np.array
             Magnitude values
         """
-        vals = (-2.5 * np.log10(flux_vals) + mag_offset,)
-        return np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
+        vals = np.where(np.isfinite(flux_vals), -2.5 * np.log10(flux_vals) + mag_offset, nondetect_val)
+        vals = np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
+        return vals
 
     @staticmethod
     def _flux_err_to_mag_err(
@@ -310,7 +311,8 @@ class EstimatePZAlgoTask(Task, ABC):
                     fluxErrVals,
                     self.mag_conv,
                     self.config.nondetect_val,
-                )
+                )           
+                
         # return the dict with the mags
         return mag_dict
 
