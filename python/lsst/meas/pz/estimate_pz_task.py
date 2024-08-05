@@ -26,8 +26,6 @@ __all__ = [
     "EstimatePZTask",
 ]
 
-from typing import Any
-
 from abc import ABC
 
 import lsst.pex.config as pexConfig
@@ -35,17 +33,12 @@ import lsst.pipe.base.connectionTypes as cT
 import numpy as np
 from ceci.config import StageConfig as CeciStageConfig
 from ceci.config import StageParameter as CeciParam
-
 # from ceci.stage import PipelineStage as CeciPipelineStage
 from lsst.daf.butler import DeferredDatasetHandle
-from lsst.pipe.base import (
-    Task,
-    PipelineTask,
-    PipelineTaskConfig,
-    PipelineTaskConnections,
-    Struct,
-)
+from lsst.pipe.base import (PipelineTask, PipelineTaskConfig,
+                            PipelineTaskConnections, Struct, Task)
 from pandas import DataFrame
+from rail.core.model import Model
 from rail.interfaces import PZFactory
 
 
@@ -72,7 +65,7 @@ class EstimatePZConnections(
         name="objectTable",
         storageClass="DataFrame",
         dimensions=(
-            "instrument",
+            "skymap",
             "tract",
             "patch",
         ),
@@ -84,7 +77,7 @@ class EstimatePZConnections(
         name="pzEnsemble",
         storageClass="QPEnsemble",
         dimensions=(
-            "instrument",
+            "skymap",
             "tract",
             "patch",
         ),
@@ -112,6 +105,31 @@ class EstimatePZAlgoConfigBase(
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
     mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
+    flux_column_template = pexConfig.Field(
+        doc="Template for flux column names",
+        dtype=str,
+        default="{band}_gaap1p0Flux",
+    )
+    flux_err_column_template = pexConfig.Field(
+        doc="Template for flux error column names",
+        dtype=str,
+        default="{band}_gaap1p0FluxErr",
+    )
+    mag_template = pexConfig.Field(
+        doc="Template for magnitude names",
+        dtype=str,
+        default="mag_{band}_lsst",
+    )
+    mag_err_template = pexConfig.Field(
+        doc="Template for magntitude error names",
+        dtype=str,
+        default="mag_err_{band}_lsst",
+    )
+    band_names = pexConfig.Field(
+        doc="Names of bands being used",
+        dtype=str,
+        default="grizy",
+    )
 
     @classmethod
     def _make_fields(cls):
@@ -224,19 +242,31 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def _get_flux_names(self) -> dict[str, str]:
         """Return a dict mapping band to flux column name"""
-        return {band: f"{band}_gaap1p0Flux" for band in "ugrizy"}
+        return {
+            band: self.config.flux_column_template.format(band=band)
+            for band in self.config.band_names
+        }
 
     def _get_flux_err_names(self) -> dict[str, str]:
         """Return a dict mapping band to flux error column name"""
-        return {band: f"{band}_gaap1p0FluxErr" for band in "ugrizy"}
+        return {
+            band: self.config.flux_err_column_template.format(band=band)
+            for band in self.config.band_names
+        }
 
     def _get_mag_names(self) -> dict[str, str]:
         """Return a dict mapping band to mag column name"""
-        return {band: f"mag_{band}_lsst" for band in "ugrizy"}
+        return {
+            band: self.config.mag_template.format(band=band)
+            for band in self.config.band_names
+        }
 
     def _get_mag_err_names(self) -> dict[str, str]:
         """Return a dict mapping band to mag error column name"""
-        return {band: f"mag_err_{band}_lsst" for band in "ugrizy"}
+        return {
+            band: self.config.mag_err_template.format(band=band)
+            for band in self.config.band_names
+        }
 
     def _get_mags_and_errs(
         self,
@@ -286,7 +316,7 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def run(
         self,
-        pzModel: dict[str, Any],
+        pzModel: Model,
         objectTable: DeferredDatasetHandle,
     ) -> Struct:
         """Run a p(z) estimation algorithm
@@ -374,7 +404,7 @@ class EstimatePZTask(PipelineTask):
 
     def run(
         self,
-        pzModel: dict[str, Any],
+        pzModel: Model,
         objectTable: DeferredDatasetHandle,
     ) -> Struct:
         ret_struct = self.pz_algo.run(pzModel, objectTable)

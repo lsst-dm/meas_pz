@@ -26,6 +26,7 @@ __all__ = [
 
 
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
+
 from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
 
 

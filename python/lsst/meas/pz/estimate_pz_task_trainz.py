@@ -25,9 +25,9 @@ __all__ = [
 ]
 
 import numpy as np
-
 from pandas import DataFrame
 from rail.estimation.algos.train_z import TrainZEstimator
+
 from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
 
 
@@ -64,4 +64,17 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
         fluxes: DataFrame,
         mag_offset: float,
     ) -> dict[str, np.array]:
-        return dict(lsst_i_mag=fluxes["i_gaap1p0Flux"])
+
+        flux_names = self._get_flux_names()
+        mag_names = self._get_mag_names()
+
+        mag_dict = {}
+        # loop over bands, make mags and mag errors and fill dict
+        for band in flux_names.keys():
+            fluxVals = fluxes[flux_names[band]]
+            mag_dict[mag_names[band]] = self._flux_to_mag(
+                fluxVals,
+                mag_offset,
+                99.0,
+            )
+        return mag_dict
