@@ -62,4 +62,4 @@ class QPFormatter(FormatterV2):
         return qp.read(path)  # type: ignore
 
     def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:
-        in_memory_dataset.writeto(uri.ospath)
+        in_memory_dataset.write_to(uri.ospath)

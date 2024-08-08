@@ -374,7 +374,7 @@ class EstimatePZAlgoTask(Task, ABC):
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object
         pz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)
-        return Struct(pz_pdfs=pz_pdfs)
+        return Struct(pzEnsemble=pz_pdfs)
 
 
 class EstimatePZTaskConfig(
@@ -420,4 +420,4 @@ class EstimatePZTask(PipelineTask):
         objectTable: DeferredDatasetHandle,
     ) -> Struct:
         ret_struct = self.pz_algo.run(pzModel, objectTable)
-        return Struct(pz_pdfs=ret_struct.pz_pdfs)
+        return Struct(pzEnsemble=ret_struct.pzEnsemble)
