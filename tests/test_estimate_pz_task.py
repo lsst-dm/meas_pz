@@ -27,6 +27,7 @@ import unittest
 import subprocess
 
 import qp
+from rail.core.model import Model as PZModel
 
 from lsst.daf.butler import (
     Butler,
@@ -37,10 +38,15 @@ from lsst.daf.butler import (
     DimensionUniverse,
     FileDataset,
 )
+from lsst.meas.pz.estimate_pz_task import EstimatePZTask
+from lsst.meas.pz.estimate_pz_task_trainz import EstimatePZTrainZTask
+from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNTask
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
 CI_HSC_GEN3_DIR = os.environ.get("CI_HSC_GEN3_DIR", None)
+DAF_BUTLER_REPOSITORY_INDEX = os.environ.get("DAF_BUTLER_REPOSITORY_INDEX", None)
+IS_S3DF = DAF_BUTLER_REPOSITORY_INDEX == "/sdf/group/rubin/shared/data-repos.yaml"
 
 
 class MeasPzTasksTestCase(unittest.TestCase):
@@ -77,13 +83,78 @@ class MeasPzTasksTestCase(unittest.TestCase):
         isCalibration=True,
     )
 
-    def makeButler(self, **kwargs):
+    def makeButler_ci_hsc(self, **kwargs):
         butler = Butler(os.abspath(os.path.join(CI_HSC_GEN3_DIR, "DATA")), **kwargs)
         return butler
 
+    def makeButler_repo_dc2(self, **kwargs):
+        butler = Butler(
+            "/repo/dc2",
+            collections=[
+                "2.2i/runs/test-med-1/w_2024_16/DM-43972/step3/group1/w00_000"
+            ],
+            **kwargs,
+        )
+        return butler
+
+    @unittest.skipIf(not IS_S3DF, "Not at S3DF")
+    def test_pz_task_trainz_s3df(self):
+        butler = self.makeButler_repo_dc2()
+        model_file_trainz = "model_inform_train_z_wrap.pickle"
+        to_delete = []
+        if not os.path.exists(model_file_trainz):
+            os.system(
+                f"curl -O https://portal.nersc.gov/cfs/lsst/PZ/pz_models/{model_file_trainz}"
+            )
+            to_delete.append(model_file_trainz)
+        pz_model_trainz = PZModel.read(model_file_trainz)
+        task_config_trainz = EstimatePZTask.ConfigClass()
+        task_config_trainz.pz_algo.retarget(EstimatePZTrainZTask)
+        task_config_trainz.pz_algo.stage_name = "trainz"
+        task_config_trainz.pz_algo.output_mode = "return"
+        task_trainz = EstimatePZTask(True, config=task_config_trainz)
+        dd = butler.getDeferred("objectTable", skymap="DC2", tract=3829, patch=1)
+        out_trainz = task_trainz.run(pz_model_trainz, dd)
+        out_trainz.pzEnsemble.write_to("output_trainz.hdf5")
+        to_delete.append("output_trainz.hdf5")
+        test_out = qp.read("output_trainz.hdf5")
+        assert isinstance(test_out, qp.Ensemble)
+        assert test_out.npdf == 29358
+        for fdel_ in to_delete:
+            os.unlink(fdel_)
+
+    @unittest.skipIf(not IS_S3DF, "Not at S3DF")
+    def test_pz_task_knn_s3df(self):
+        butler = self.makeButler_repo_dc2()
+        model_file_knn_lsst = "model_inform_knn_lsst_wrap.pickle"
+        to_delete = []
+        if not os.path.exists(model_file_knn_lsst):
+            os.system(
+                f"curl -O https://portal.nersc.gov/cfs/lsst/PZ/pz_models/{model_file_knn_lsst}"
+            )
+            to_delete.append(model_file_knn_lsst)
+        pz_model_knn_lsst = PZModel.read(model_file_knn_lsst)
+
+        task_config_knn = EstimatePZTask.ConfigClass()
+        task_config_knn.pz_algo.retarget(EstimatePZKNNTask)
+        task_config_knn.pz_algo.stage_name = "knn"
+        task_config_knn.pz_algo.output_mode = "return"
+
+        task_knn = EstimatePZTask(True, config=task_config_knn)
+        dd = butler.getDeferred("objectTable", skymap="DC2", tract=3829, patch=1)
+
+        out_knn = task_knn.run(pz_model_knn_lsst, dd)
+        out_knn.pzEnsemble.write_to("output_knn_lsst.hdf5")
+        to_delete.append("output_knn_lsst.hdf5")
+        test_out = qp.read("output_knn_lsst.hdf5")
+        assert isinstance(test_out, qp.Ensemble)
+        assert test_out.npdf == 29358
+        for fdel_ in to_delete:
+            os.unlink(fdel_)
+
     @unittest.skipIf(CI_HSC_GEN3_DIR is None, "CI_HSC_GEN3 not installed")
-    def test_hsc_pz_tasks(self):
-        butler = self.makeButler(writeable=True)
+    def test_pz_tasks_ci_hsc(self):
+        butler = self.makeButler_ci_hsc(writeable=True)
         butler.registry.registerDatasetType(self.pzModel_trainz_datasetType)
         butler.registry.registerDatasetType(self.pzModel_knn_datasetType)
         butler.registry.registerRun("u/testing/pz_models")
