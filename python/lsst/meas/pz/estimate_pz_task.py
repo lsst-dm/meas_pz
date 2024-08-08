@@ -134,7 +134,7 @@ class EstimatePZAlgoConfigBase(
     band_names = pexConfig.Field(
         doc="Names of bands being used",
         dtype=str,
-        default="grizy",
+        default="ugrizy",
     )
 
     @classmethod
