@@ -136,6 +136,18 @@ class EstimatePZAlgoConfigBase(
         dtype=str,
         default="ugrizy",
     )
+    band_a_env = pexConfig.DictField(
+        doc="Reddening parameters",
+        keytype=str,
+        default=dict(
+            u=4.81,
+            g=3.64,
+            r=2.70,
+            i=2.06,
+            z=1.58,
+            y=1.31,
+        ),
+    )
 
     @classmethod
     def _make_fields(cls):
@@ -279,6 +291,25 @@ class EstimatePZAlgoTask(Task, ABC):
             for band in self.config.band_names
         }
 
+    def _deredden_mags(
+        self,
+        data: dict[str, np.array],
+        a_env_dict: dict[str, float],
+        mag_names: dict[str, str],
+    ) -> dict[str, np.array]:
+        """Deredden the magnitdues"""
+        ebv = data["ebv"]
+        for band_, a_env_ in a_env_dict.items():
+            mag_name = mag_names[band_]
+            raw_mag = data[mag_name]
+            dered_mag = np.where(
+                np.isfinite(raw_mag),
+                raw_mag - ebv * a_env_,
+                self.config.nondetect_val,
+            )
+            data[mag_name] = dered_mag
+        return data
+
     def _get_mags_and_errs(
         self,
         fluxes: DataFrame,
@@ -363,14 +394,20 @@ class EstimatePZAlgoTask(Task, ABC):
         )
 
         # Get the list of columns we want to read from the object table
-        col_names = list(self._get_flux_names().values()) + list(
-            self._get_flux_err_names().values()
+        col_names = (
+            list(self._get_flux_names().values())
+            + list(self._get_flux_err_names().values())
+            + ["ebv"]
         )
         # Read those to a DataFrame
         fluxes = objectTable.get(parameters=dict(columns=col_names))
         n_obj = len(fluxes)
         # Convert fluxes to mags
         mags = self._get_mags_and_errs(fluxes, self.config.mag_offset)
+        # De-redden
+        mags["ebv"] = fluxes["ebv"]
+        mags = self._deredden_mags(mags, self.config.band_a_env, self._get_mag_names())
+
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object
         pz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)

@@ -84,7 +84,9 @@ class MeasPzTasksTestCase(unittest.TestCase):
     )
 
     def makeButler_ci_hsc(self, **kwargs):
-        butler = Butler(os.abspath(os.path.join(CI_HSC_GEN3_DIR, "DATA")), **kwargs)
+        butler = Butler(
+            os.path.abspath(os.path.join(CI_HSC_GEN3_DIR, "DATA")), **kwargs
+        )
         return butler
 
     def makeButler_repo_dc2(self, **kwargs):
@@ -154,6 +156,14 @@ class MeasPzTasksTestCase(unittest.TestCase):
 
     @unittest.skipIf(CI_HSC_GEN3_DIR is None, "CI_HSC_GEN3 not installed")
     def test_pz_tasks_ci_hsc(self):
+        model_file_knn_hsc = "model_inform_knn_hsc_wrap.pickle"
+        to_delete = []
+        if not os.path.exists(model_file_knn_hsc):
+            os.system(
+                f"curl -O https://portal.nersc.gov/cfs/lsst/PZ/pz_models/{model_file_knn_hsc}"
+            )
+            to_delete.append(model_file_knn_hsc)
+
         butler = self.makeButler_ci_hsc(writeable=True)
         butler.registry.registerDatasetType(self.pzModel_trainz_datasetType)
         butler.registry.registerDatasetType(self.pzModel_knn_datasetType)
@@ -186,7 +196,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
 
         butler.ingest(
             FileDataset(
-                os.path.join(TEST_DIR, "model_inform_knn_hsc_wrap.pickle"),
+                os.path.join(TEST_DIR, "..", "model_inform_knn_hsc_wrap.pickle"),
                 pzModel_knn_datasetRef,
             ),
         )
@@ -224,3 +234,6 @@ class MeasPzTasksTestCase(unittest.TestCase):
         assert isinstance(output_pz_knn, qp.Ensemble)
 
         assert output_pz_train.npdf == output_pz_knn.npdf
+
+        for fdel_ in to_delete:
+            os.unlink(fdel_)
