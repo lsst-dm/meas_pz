@@ -131,11 +131,6 @@ class EstimatePZAlgoConfigBase(
         dtype=str,
         default="mag_err_{band}_lsst",
     )
-    band_names = pexConfig.Field(
-        doc="Names of bands being used",
-        dtype=str,
-        default="ugrizy",
-    )
     band_a_env = pexConfig.DictField(
         doc="Reddening parameters",
         keytype=str,
@@ -263,41 +258,34 @@ class EstimatePZAlgoTask(Task, ABC):
         vals = flux_err_vals / (flux_vals * mag_conv)
         return np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
 
-    def _get_flux_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux column name"""
-        return {
-            band: self.config.flux_column_template.format(band=band)
-            for band in self.config.band_names
-        }
-
-    def _get_flux_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux error column name"""
-        return {
-            band: self.config.flux_err_column_template.format(band=band)
-            for band in self.config.band_names
-        }
-
-    def _get_mag_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag column name"""
-        return {
-            band: self.config.mag_template.format(band=band)
-            for band in self.config.band_names
-        }
-
-    def _get_mag_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag error column name"""
-        return {
-            band: self.config.mag_err_template.format(band=band)
-            for band in self.config.band_names
-        }
-
+    @staticmethod
     def _deredden_mags(
-        self,
         data: dict[str, np.array],
         a_env_dict: dict[str, float],
         mag_names: dict[str, str],
+        nondetect_val: float,
     ) -> dict[str, np.array]:
-        """Deredden the magnitdues"""
+        """Deredden the magnitdues
+
+        Parameters
+        ----------
+        data: dict[str, np.array]
+            Input data
+
+        a_env_dict: dict[str, float],
+            Redenning parameters for bands
+
+        mag_names: dict[str, str]
+            Mapping from bands to magnitudes
+
+        nondetect_val : float
+            Value to set for non-detections
+
+        Returns
+        -------
+        mags: dict[str, np.array]
+            Udpated dict with dereddened mags
+        """
         ebv = data["ebv"]
         for band_, a_env_ in a_env_dict.items():
             mag_name = mag_names[band_]
@@ -305,10 +293,38 @@ class EstimatePZAlgoTask(Task, ABC):
             dered_mag = np.where(
                 np.isfinite(raw_mag),
                 raw_mag - ebv * a_env_,
-                self.config.nondetect_val,
+                nondetect_val,
             )
             data[mag_name] = dered_mag
         return data
+
+    def _get_flux_names(self) -> dict[str, str]:
+        """Return a dict mapping band to flux column name"""
+        return {
+            band: self.config.flux_column_template.format(band=band)
+            for band in self.config.band_a_env.keys()
+        }
+
+    def _get_flux_err_names(self) -> dict[str, str]:
+        """Return a dict mapping band to flux error column name"""
+        return {
+            band: self.config.flux_err_column_template.format(band=band)
+            for band in self.config.band_a_env.keys()
+        }
+
+    def _get_mag_names(self) -> dict[str, str]:
+        """Return a dict mapping band to mag column name"""
+        return {
+            band: self.config.mag_template.format(band=band)
+            for band in self.config.band_a_env.keys()
+        }
+
+    def _get_mag_err_names(self) -> dict[str, str]:
+        """Return a dict mapping band to mag error column name"""
+        return {
+            band: self.config.mag_err_template.format(band=band)
+            for band in self.config.band_a_env.keys()
+        }
 
     def _get_mags_and_errs(
         self,
@@ -406,7 +422,12 @@ class EstimatePZAlgoTask(Task, ABC):
         mags = self._get_mags_and_errs(fluxes, self.config.mag_offset)
         # De-redden
         mags["ebv"] = fluxes["ebv"]
-        mags = self._deredden_mags(mags, self.config.band_a_env, self._get_mag_names())
+        mags = self._deredden_mags(
+            mags,
+            self.config.band_a_env,
+            self._get_mag_names(),
+            self.config.nondetect_val,
+        )
 
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object
