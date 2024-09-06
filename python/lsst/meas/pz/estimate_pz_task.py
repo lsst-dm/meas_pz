@@ -26,7 +26,7 @@ __all__ = [
     "EstimatePZTask",
 ]
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import lsst.pex.config as pexConfig
 import lsst.pipe.base.connectionTypes as cT
@@ -103,10 +103,10 @@ class EstimatePZAlgoConfigBase(
     Subclasses will just have to set
     `estimator_class` and invoke _make_fields.
     """
-    
+
+    @classmethod
     @abstractmethod
-    @property
-    def estimator_class(self) -> type[CatEstimator]:
+    def estimator_class(cls) -> type[CatEstimator]:
         raise NotImplementedError()
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
@@ -144,8 +144,8 @@ class EstimatePZAlgoConfigBase(
         """import the RAIL estimation stage
         and loop through the stage config parameters and make corresponding
         pex.config parameters.
-        """        
-        stage_class = cls.estimator_class
+        """
+        stage_class = cls.estimator_class()
         for key, val in stage_class.config_options.items():
             if isinstance(val, CeciStageConfig):
                 val = val.get(key)
@@ -399,7 +399,7 @@ class EstimatePZAlgoTask(Task, ABC):
         # Build the RAIL stage
         self._stage = PZFactory.build_stage_instance(
             self.config.stage_name,
-            self.config.estimator_class,
+            self.config.estimator_class(),
             model_path=pzModel.data,
             input_path="dummy.in",
             **rail_kwargs,

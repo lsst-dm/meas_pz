@@ -24,7 +24,7 @@ __all__ = [
     "EstimatePZKNNConfig",
 ]
 
-
+from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
 
 from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
@@ -40,8 +40,8 @@ class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
     for parameters and default values.
     """
 
-    @property
-    def estimator_class(self) -> type[CatEstimator]:
+    @classmethod
+    def estimator_class(cls) -> type[CatEstimator]:
         return KNearNeighEstimator
 
 

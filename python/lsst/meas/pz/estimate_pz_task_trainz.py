@@ -26,6 +26,7 @@ __all__ = [
 
 import numpy as np
 from pandas import DataFrame
+from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.train_z import TrainZEstimator
 
 from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
@@ -41,8 +42,8 @@ class EstimatePZTrainZConfig(EstimatePZAlgoConfigBase):
     for parameters and default values.
     """
 
-    @property
-    def estimator_class(self) -> type[CatEstimator]:
+    @classmethod
+    def estimator_class(cls) -> type[CatEstimator]:
         return TrainZEstimator
 
 
