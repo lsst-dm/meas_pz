@@ -41,7 +41,9 @@ class EstimatePZTrainZConfig(EstimatePZAlgoConfigBase):
     for parameters and default values.
     """
 
-    estimator_class = TrainZEstimator
+    @property
+    def estimator_class(self) -> type[CatEstimator]:
+        return TrainZEstimator
 
 
 EstimatePZTrainZConfig._make_fields()
@@ -58,6 +60,7 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
     """
 
     ConfigClass = EstimatePZTrainZConfig
+    _DefaultName = "estimatePZTrainZ"
 
     def _get_mags_and_errs(
         self,
@@ -70,8 +73,8 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
 
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
-        for band in flux_names.keys():
-            fluxVals = fluxes[flux_names[band]]
+        for band, band_name in flux_names.items():
+            fluxVals = fluxes[band_name]
             mag_dict[mag_names[band]] = self._flux_to_mag(
                 fluxVals,
                 mag_offset,

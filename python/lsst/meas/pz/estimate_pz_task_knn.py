@@ -40,7 +40,9 @@ class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
     for parameters and default values.
     """
 
-    estimator_class = KNearNeighEstimator
+    @property
+    def estimator_class(self) -> type[CatEstimator]:
+        return KNearNeighEstimator
 
 
 EstimatePZKNNConfig._make_fields()
@@ -58,3 +60,4 @@ class EstimatePZKNNTask(EstimatePZAlgoTask):
     """
 
     ConfigClass = EstimatePZKNNConfig
+    _DefaultName = "estimatePZKNN"

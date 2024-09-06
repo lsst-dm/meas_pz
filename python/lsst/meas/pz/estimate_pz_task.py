@@ -45,6 +45,7 @@ from lsst.pipe.base import (
 )
 from pandas import DataFrame
 from rail.core.model import Model
+from rail.estimation.estimator import CatEstimator
 from rail.interfaces import PZFactory
 
 
@@ -99,41 +100,35 @@ class EstimatePZAlgoConfigBase(
     This class mostly just translates the RAIL configuration
     parameters to pex.config parameters.
 
-    the `_make_fields` method will import the RAIL estimation stage
-    and loop through the stage config parameters and make corresponding
-    pex.config parameters.
-
     Subclasses will just have to set
-    `stage_class` and invoke _make_fields.
+    `estimator_class` and invoke _make_fields.
     """
-
-    stage_class = None
+    
+    @abstractmethod
+    @property
+    def estimator_class(self) -> type[CatEstimator]:
+        raise NotImplementedError()
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
     mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
-    flux_column_template = pexConfig.Field(
+    flux_column_template = pexConfig.Field[str](
         doc="Template for flux column names",
-        dtype=str,
         default="{band}_gaap1p0Flux",
     )
-    flux_err_column_template = pexConfig.Field(
+    flux_err_column_template = pexConfig.Field[str](
         doc="Template for flux error column names",
-        dtype=str,
         default="{band}_gaap1p0FluxErr",
     )
-    mag_template = pexConfig.Field(
+    mag_template = pexConfig.Field[str](
         doc="Template for magnitude names",
-        dtype=str,
         default="mag_{band}_lsst",
     )
-    mag_err_template = pexConfig.Field(
+    mag_err_template = pexConfig.Field[str](
         doc="Template for magntitude error names",
-        dtype=str,
         default="mag_err_{band}_lsst",
     )
-    band_a_env = pexConfig.DictField(
+    band_a_env = pexConfig.DictField[str, float](
         doc="Reddening parameters",
-        keytype=str,
         default=dict(
             u=4.81,
             g=3.64,
@@ -146,9 +141,10 @@ class EstimatePZAlgoConfigBase(
 
     @classmethod
     def _make_fields(cls):
-        # stage_class = CeciPipelineStage.get_stage(
-        #    cls.estimator_class, cls.estimator_module
-        # )
+        """import the RAIL estimation stage
+        and loop through the stage config parameters and make corresponding
+        pex.config parameters.
+        """        
         stage_class = cls.estimator_class
         for key, val in stage_class.config_options.items():
             if isinstance(val, CeciStageConfig):
@@ -224,7 +220,7 @@ class EstimatePZAlgoTask(Task, ABC):
             -2.5 * np.log10(flux_vals) + mag_offset,
             nondetect_val,
         )
-        vals = np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
+        vals = np.squeeze(vals)
         return vals
 
     @staticmethod
@@ -459,9 +455,7 @@ class EstimatePZTask(PipelineTask):
     """
 
     ConfigClass = EstimatePZTaskConfig
-    _DefaultName = "EstimatePZ"
-
-    mag_conv = np.log(10) * 0.4
+    _DefaultName = "estimatePZ"
 
     def __init__(self, initInputs, **kwargs):
         super().__init__(initInputs=initInputs, **kwargs)
