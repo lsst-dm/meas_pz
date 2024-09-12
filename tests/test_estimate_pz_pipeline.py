@@ -37,12 +37,13 @@ from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
+TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
 
 
 class MeasPzPipelineTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.root = makeTestTempDir(TEST_DIR)
+        self.root = makeTestTempDir(TEST_DATA_DIR)
         self.maxDiff = None
 
     def tearDown(self):
@@ -64,7 +65,7 @@ class MeasPzPipelineTestCase(unittest.TestCase):
         butler = self.makeButler(writeable=True)
 
         tester = PipelineStepTester(
-            os.path.join(TEST_DIR, "pz_pipeline_hsc.yaml"),
+            os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
             ["#all_pz"],
             [
                 ("objectTable", {"skymap", "tract", "patch"}, "DataFrame", False),

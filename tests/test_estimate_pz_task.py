@@ -44,6 +44,7 @@ from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNTask
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
+TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
 CI_HSC_GEN3_DIR = os.environ.get("CI_HSC_GEN3_DIR", None)
 DAF_BUTLER_REPOSITORY_INDEX = os.environ.get("DAF_BUTLER_REPOSITORY_INDEX", None)
 IS_S3DF = DAF_BUTLER_REPOSITORY_INDEX == "/sdf/group/rubin/shared/data-repos.yaml"
@@ -189,14 +190,14 @@ class MeasPzTasksTestCase(unittest.TestCase):
 
         butler.ingest(
             FileDataset(
-                os.path.join(TEST_DIR, "model_inform_train_z_wrap.pickle"),
+                os.path.join(TEST_DATA_DIR, "model_inform_train_z_wrap.pickle"),
                 pzModel_trainz_datasetRef,
             ),
         )
 
         butler.ingest(
             FileDataset(
-                os.path.join(TEST_DIR, "..", "model_inform_knn_hsc_wrap.pickle"),
+                os.path.join(TEST_DATA_DIR, "..", "model_inform_knn_hsc_wrap.pickle"),
                 pzModel_knn_datasetRef,
             ),
         )
@@ -213,7 +214,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 "-o",
                 "u/testing/pz_rail_testing",
                 "-p",
-                os.path.join(TEST_DIR, "pz_pipeline_hsc.yaml"),
+                os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
                 "-d",
                 "skymap='discrete/ci_hsc' AND tract=0 AND patch=69",
             ]
