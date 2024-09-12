@@ -159,11 +159,12 @@ class MeasPzTasksTestCase(unittest.TestCase):
     def test_pz_tasks_ci_hsc(self):
         model_file_knn_hsc = "model_inform_knn_hsc_wrap.pickle"
         to_delete = []
-        if not os.path.exists(model_file_knn_hsc):
+        if not os.path.exists(f"data/{model_file_knn_hsc}"):
             os.system(
-                f"curl -O https://portal.nersc.gov/cfs/lsst/PZ/pz_models/{model_file_knn_hsc}"
+                f"curl -o data/{model_file_knn_hsc} "
+                f"https://portal.nersc.gov/cfs/lsst/PZ/pz_models/{model_file_knn_hsc}"
             )
-            to_delete.append(model_file_knn_hsc)
+            to_delete.append(f"data/{model_file_knn_hsc}")
 
         butler = self.makeButler_ci_hsc(writeable=True)
         butler.registry.registerDatasetType(self.pzModel_trainz_datasetType)
@@ -197,7 +198,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
 
         butler.ingest(
             FileDataset(
-                os.path.join(TEST_DATA_DIR, "..", "model_inform_knn_hsc_wrap.pickle"),
+                os.path.join(TEST_DATA_DIR, "model_inform_knn_hsc_wrap.pickle"),
                 pzModel_knn_datasetRef,
             ),
         )
