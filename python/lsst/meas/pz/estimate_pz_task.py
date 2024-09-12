@@ -473,17 +473,12 @@ class EstimatePZTask(PipelineTask):
         self.makeSubtask("pz_algo")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        inputs = {}
-        for key, val in inputs:
-            if key == "objectTable":
-                # Get only the columns that we need
-                inputs[key] = butlerQC.get(
-                    val,
-                    parameters=dict(columns=self.pz_algo.col_names()),
-                )
-            else:
-                inputs[key] = butlerQC.get(val)
+        inputs = butlerQC.get(inputRefs)
+        inputs['fluxes'] = inputs.pop('objectTable').get(
+            parameters=dict(columns=self.pz_algo.col_names()),
+        )
         outputs = self.run(**inputs)
+        print(outputs, outputRefs)
         butlerQC.put(outputs, outputRefs)
 
     def run(
