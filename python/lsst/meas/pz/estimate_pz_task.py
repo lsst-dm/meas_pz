@@ -35,7 +35,6 @@ from ceci.config import StageConfig as CeciStageConfig
 from ceci.config import StageParameter as CeciParam
 
 # from ceci.stage import PipelineStage as CeciPipelineStage
-from lsst.daf.butler import DeferredDatasetHandle
 from lsst.pipe.base import (
     PipelineTask,
     PipelineTaskConfig,
@@ -370,11 +369,18 @@ class EstimatePZAlgoTask(Task, ABC):
         return mag_dict
 
     def init(
-        self,        
+        self,
+        pzModel: Model,
     ) -> None:
-       """Initialize the Task by setting up the RAIL stage
-       that will do the actually computations
-       """
+        """Initialize the Task by setting up the RAIL stage
+        that will do the actually computations
+
+        Parameters
+        ----------
+        pzModel: dict[str, Any]
+            Model used by the p(z) estimation algorithm
+
+        """
         # pop the pipeline task config options
         # so that we can pass the rest to RAIL
         rail_kwargs = self.config.toDict().copy()
@@ -400,20 +406,16 @@ class EstimatePZAlgoTask(Task, ABC):
             + list(self._get_flux_err_names().values())
             + ["ebv"]
         )
-        return the_col_names   
-        
+        return the_col_names
+
     def run(
         self,
-        pzModel: Model,
         fluxes: DataFrame,
     ) -> Struct:
         """Run a p(z) estimation algorithm
 
         Parameters
         ----------
-        pzModel: dict[str, Any]
-            Model used by the p(z) estimation algorithm
-
         fluxes: DataFrame
             Fluxes used to compute the redshifts
 
@@ -473,14 +475,14 @@ class EstimatePZTask(PipelineTask):
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = {}
         for key, val in inputs:
-            if key == 'objectTable':
+            if key == "objectTable":
                 # Get only the columns that we need
-                inputs[key] = bulterQC.get(
+                inputs[key] = butlerQC.get(
                     val,
                     parameters=dict(columns=self.pz_algo.col_names()),
                 )
             else:
-                inputs[key] = butlerQC.get(val)        
+                inputs[key] = butlerQC.get(val)
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
 
@@ -488,10 +490,10 @@ class EstimatePZTask(PipelineTask):
         self,
         pzModel: Model,
         fluxes: DataFrame,
-        skip_init: bool=False,
+        skip_init: bool = False,
     ) -> Struct:
         if not skip_init:
-            self.pz_algo.init()
-            
-        ret_struct = self.pz_algo.run(pzModel, fluxes)
+            self.pz_algo.init(pzModel)
+
+        ret_struct = self.pz_algo.run(fluxes)
         return Struct(pzEnsemble=ret_struct.pzEnsemble)
