@@ -470,6 +470,7 @@ class EstimatePZTask(PipelineTask):
 
     def __init__(self, initInputs, **kwargs):
         super().__init__(initInputs=initInputs, **kwargs)
+        self._initialized = False
         self.makeSubtask("pz_algo")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
@@ -477,8 +478,7 @@ class EstimatePZTask(PipelineTask):
         inputs['fluxes'] = inputs.pop('objectTable').get(
             parameters=dict(columns=self.pz_algo.col_names()),
         )
-        outputs = self.run(**inputs)
-        print(outputs, outputRefs)
+        outputs = self.run(**inputs, skip_init=self._initialized)
         butlerQC.put(outputs, outputRefs)
 
     def run(
@@ -488,6 +488,7 @@ class EstimatePZTask(PipelineTask):
         skip_init: bool = False,
     ) -> Struct:
         if not skip_init:
+            self._initialized = True
             self.pz_algo.init(pzModel)
 
         ret_struct = self.pz_algo.run(fluxes)
