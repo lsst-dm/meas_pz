@@ -369,26 +369,12 @@ class EstimatePZAlgoTask(Task, ABC):
         # return the dict with the mags
         return mag_dict
 
-    def run(
-        self,
-        pzModel: Model,
-        objectTable: DeferredDatasetHandle,
-    ) -> Struct:
-        """Run a p(z) estimation algorithm
-
-        Parameters
-        ----------
-        pzModel: dict[str, Any]
-            Model used by the p(z) estimation algorithm
-
-        objectTable: DeferredDatasetHandle
-            Handle used to read the objectTable
-
-        Returns
-        -------
-        pz_pdfs: qp.Ensemble
-            Object with the p(z) pdfs
-        """
+    def init(
+        self,        
+    ) -> None:
+       """Initialize the Task by setting up the RAIL stage
+       that will do the actually computations
+       """
         # pop the pipeline task config options
         # so that we can pass the rest to RAIL
         rail_kwargs = self.config.toDict().copy()
@@ -405,14 +391,37 @@ class EstimatePZAlgoTask(Task, ABC):
             **rail_kwargs,
         )
 
-        # Get the list of columns we want to read from the object table
-        col_names = (
+    def col_names(
+        self,
+    ) -> list[str]:
+        """Get the list of column names to read from the input data"""
+        the_col_names = (
             list(self._get_flux_names().values())
             + list(self._get_flux_err_names().values())
             + ["ebv"]
         )
-        # Read those to a DataFrame
-        fluxes = objectTable.get(parameters=dict(columns=col_names))
+        return the_col_names   
+        
+    def run(
+        self,
+        pzModel: Model,
+        fluxes: DataFrame,
+    ) -> Struct:
+        """Run a p(z) estimation algorithm
+
+        Parameters
+        ----------
+        pzModel: dict[str, Any]
+            Model used by the p(z) estimation algorithm
+
+        fluxes: DataFrame
+            Fluxes used to compute the redshifts
+
+        Returns
+        -------
+        pz_pdfs: qp.Ensemble
+            Object with the p(z) pdfs
+        """
         n_obj = len(fluxes)
         # Convert fluxes to mags
         mags = self._get_mags_and_errs(fluxes, self.config.mag_offset)
@@ -462,14 +471,27 @@ class EstimatePZTask(PipelineTask):
         self.makeSubtask("pz_algo")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        inputs = butlerQC.get(inputRefs)
+        inputs = {}
+        for key, val in inputs:
+            if key == 'objectTable':
+                # Get only the columns that we need
+                inputs[key] = bulterQC.get(
+                    val,
+                    parameters=dict(columns=self.pz_algo.col_names()),
+                )
+            else:
+                inputs[key] = butlerQC.get(val)        
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
 
     def run(
         self,
         pzModel: Model,
-        objectTable: DeferredDatasetHandle,
+        fluxes: DataFrame,
+        skip_init: bool=False,
     ) -> Struct:
-        ret_struct = self.pz_algo.run(pzModel, objectTable)
+        if not skip_init:
+            self.pz_algo.init()
+            
+        ret_struct = self.pz_algo.run(pzModel, fluxes)
         return Struct(pzEnsemble=ret_struct.pzEnsemble)
