@@ -94,7 +94,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
         butler = Butler(
             "/repo/dc2",
             collections=[
-                "2.2i/runs/test-med-1/w_2024_16/DM-43972/step3/group1/w00_000"
+                "2.2i/runs/test-med-1/w_2024_16/DM-43972"
             ],
             **kwargs,
         )
