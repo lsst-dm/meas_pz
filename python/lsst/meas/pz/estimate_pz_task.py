@@ -42,7 +42,8 @@ from lsst.pipe.base import (
     Struct,
     Task,
 )
-from pandas import DataFrame
+
+import astropy.table as atable
 from rail.core.model import Model
 from rail.estimation.estimator import CatEstimator
 from rail.interfaces import PZFactory
@@ -69,7 +70,7 @@ class EstimatePZConnections(
     objectTable = cT.Input(
         doc="Object table in parquet format, per patch",
         name="objectTable",
-        storageClass="DataFrame",
+        storageClass="ArrowAstropy",
         dimensions=(
             "skymap",
             "tract",
@@ -323,14 +324,14 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def _get_mags_and_errs(
         self,
-        fluxes: DataFrame,
+        fluxes: atable,
         mag_offset: float,
     ) -> dict[str, np.array]:
         """Fill and return a numpy dict with mags and mag errors
 
         Parameters
         ----------
-        fluxes : DataFrame
+        fluxes : atable
             Input fluxes and flux errors
 
         mag_offset : float
@@ -410,13 +411,13 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def run(
         self,
-        fluxes: DataFrame,
+        fluxes: atable,
     ) -> Struct:
         """Run a p(z) estimation algorithm
 
         Parameters
         ----------
-        fluxes: DataFrame
+        fluxes: atable
             Fluxes used to compute the redshifts
 
         Returns
@@ -484,7 +485,7 @@ class EstimatePZTask(PipelineTask):
     def run(
         self,
         pzModel: Model,
-        fluxes: DataFrame,
+        fluxes: atable,
         skip_init: bool = False,
     ) -> Struct:
         if not skip_init:

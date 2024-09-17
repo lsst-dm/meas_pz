@@ -31,9 +31,9 @@ from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
 
 
 class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNTask
+    """Config for EstimatePZAlgoKNNTask
 
-    This will select and comnfigure the KNearNeighEstimator p(z)
+    This will select and configure the KNearNeighEstimator p(z)
     estimation algorithm
 
     See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa

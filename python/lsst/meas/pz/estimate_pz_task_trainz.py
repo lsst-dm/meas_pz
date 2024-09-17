@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 import numpy as np
-from pandas import DataFrame
+import astropy.table as atable
 from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.train_z import TrainZEstimator
 
@@ -65,7 +65,7 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
 
     def _get_mags_and_errs(
         self,
-        fluxes: DataFrame,
+        fluxes: atable,
         mag_offset: float,
     ) -> dict[str, np.array]:
 
