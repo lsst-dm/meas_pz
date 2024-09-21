@@ -37,7 +37,7 @@ from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
-TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
+TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
 
 
 class MeasPzPipelineTestCase(unittest.TestCase):

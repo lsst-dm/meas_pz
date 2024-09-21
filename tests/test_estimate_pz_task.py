@@ -43,7 +43,7 @@ from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNTask
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
-TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
+TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
 CI_HSC_GEN3_DIR = os.environ.get("CI_HSC_GEN3_DIR", None)
 DAF_BUTLER_REPOSITORY_INDEX = os.environ.get("DAF_BUTLER_REPOSITORY_INDEX", None)
 IS_S3DF = DAF_BUTLER_REPOSITORY_INDEX == "/sdf/group/rubin/shared/data-repos.yaml"
@@ -92,9 +92,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
     def makeButler_repo_dc2(self, **kwargs):
         butler = Butler(
             "/repo/dc2",
-            collections=[
-                "2.2i/runs/test-med-1/w_2024_16/DM-43972"
-            ],
+            collections=["2.2i/runs/test-med-1/w_2024_16/DM-43972"],
             **kwargs,
         )
         return butler
@@ -140,15 +138,17 @@ class MeasPzTasksTestCase(unittest.TestCase):
         pz_model_knn_lsst = PZModel.read(model_file_knn_lsst)
         task_config_knn = EstimatePZKNNTask.ConfigClass()
         task_knn = EstimatePZKNNTask(True, config=task_config_knn)
-        task_knn.config.pz_algo.bands=[
-            'mag_u_lsst',
-            'mag_g_lsst',
-            'mag_r_lsst',
-            'mag_i_lsst',
-            'mag_z_lsst',
-            'mag_y_lsst',
+        task_knn.config.pz_algo.bands = [
+            "mag_u_lsst",
+            "mag_g_lsst",
+            "mag_r_lsst",
+            "mag_i_lsst",
+            "mag_z_lsst",
+            "mag_y_lsst",
         ]
-        task_knn.config.pz_algo.band_a_env=dict(u=4.81,g=3.64,r=2.70,i=2.06,z=1.58,y=1.31)
+        task_knn.config.pz_algo.band_a_env = dict(
+            u=4.81, g=3.64, r=2.70, i=2.06, z=1.58, y=1.31
+        )
         dd = butler.getDeferred(
             "objectTable",
             skymap="DC2",

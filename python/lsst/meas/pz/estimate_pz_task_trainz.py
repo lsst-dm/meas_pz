@@ -93,21 +93,19 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
 
 class EstimatePZTrainZConfig(EstimatePZTaskConfig):
     """Config for EstimatePZTrainZTask
-    
+
     Overrides setDefaults to use TrainZ algorithm
     """
 
     def setDefaults(self):
         self.pz_algo.retarget(EstimatePZTrainZAlgoTask)
-        self.pz_algo.stage_name='trainz'
-        self.pz_algo.output_mode='return'
-        self.pz_algo.band_a_env=dict(i=2.06)
+        self.pz_algo.stage_name = "trainz"
+        self.pz_algo.output_mode = "return"
+        self.pz_algo.band_a_env = dict(i=2.06)
 
 
 class EstimatePZTrainZTask(EstimatePZTask):
-    """ Task that runs RAIL TrainZ algorithm for p(z) estimation """
-    
+    """Task that runs RAIL TrainZ algorithm for p(z) estimation"""
+
     ConfigClass = EstimatePZTrainZConfig
     _DefaultName = "estimatePZTrainZ"
-
-    
