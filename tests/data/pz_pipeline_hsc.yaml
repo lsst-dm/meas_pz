@@ -2,29 +2,15 @@ description: |
   Photo-z madness
 tasks:
   pz_trainz:
-    class: lsst.meas.pz.estimate_pz_task.EstimatePZTask
+    class: lsst.meas.pz.estimate_pz_task_trainz.EstimatePZTrainZTask
     config:
       connections.pzModel: 'pzModel_trainz'
       connections.pzEnsemble: 'pz_estimate_trainz'
-      python: |
-         from lsst.meas.pz.estimate_pz_task_trainz import EstimatePZTrainZTask
-         config.pz_algo.retarget(EstimatePZTrainZTask)
-         config.pz_algo.stage_name='trainz'
-         config.pz_algo.output_mode='return'
-         config.pz_algo.band_a_env=dict(i=2.06)
   pz_knn:
-    class: lsst.meas.pz.estimate_pz_task.EstimatePZTask
+    class: lsst.meas.pz.estimate_pz_task_knn.EstimatePZKNNTask
     config:
       connections.pzModel: 'pzModel_knn'
       connections.pzEnsemble: 'pz_estimate_knn'
-      python: |
-         from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNTask
-         config.pz_algo.retarget(EstimatePZKNNTask)
-         config.pz_algo.stage_name='knn'
-         config.pz_algo.output_mode='return'
-         config.pz_algo.bands=['mag_g_lsst','mag_r_lsst','mag_i_lsst','mag_z_lsst','mag_y_lsst']
-         config.pz_algo.ref_band='mag_i_lsst'
-         config.pz_algo.band_a_env=dict(g=3.64,r=2.70,i=2.06,z=1.58,y=1.31)
 subsets:
   all_pz:
     subset:

@@ -20,17 +20,25 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
+    "EstimatePZKNNAlgoConfig",
+    "EstimatePZKNNAlgoTask",
     "EstimatePZKNNTask",
     "EstimatePZKNNConfig",
+    
 ]
 
 from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
 
-from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
+from .estimate_pz_task import (
+    EstimatePZAlgoConfigBase,
+    EstimatePZAlgoTask,
+    EstimatePZTaskConfig,
+    EstimatePZTask,
+)
 
 
-class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
+class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
     """Config for EstimatePZAlgoKNNTask
 
     This will select and configure the KNearNeighEstimator p(z)
@@ -45,10 +53,10 @@ class EstimatePZKNNConfig(EstimatePZAlgoConfigBase):
         return KNearNeighEstimator
 
 
-EstimatePZKNNConfig._make_fields()
+EstimatePZKNNAlgoConfig._make_fields()
 
 
-class EstimatePZKNNTask(EstimatePZAlgoTask):
+class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
     """SubTask that runs RAIL KNN algorithm for p(z) estimation
 
     See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
@@ -59,5 +67,29 @@ class EstimatePZKNNTask(EstimatePZAlgoTask):
     color space.
     """
 
+    ConfigClass = EstimatePZKNNAlgoConfig
+    _DefaultName = "estimatePZKNNAlgo"
+
+
+class EstimatePZKNNConfig(EstimatePZTaskConfig):
+    """Config for EstimatePZKNNTask
+    
+    Overrides setDefaults to use KNN algorithm
+    """
+
+    def setDefaults(self):
+        self.pz_algo.retarget(EstimatePZKNNAlgoTask)
+        self.pz_algo.stage_name='knn'
+        self.pz_algo.output_mode='return'
+        self.pz_algo.bands=['mag_g_lsst','mag_r_lsst','mag_i_lsst','mag_z_lsst','mag_y_lsst']
+        self.pz_algo.ref_band='mag_i_lsst'
+        self.pz_algo.band_a_env=dict(g=3.64,r=2.70,i=2.06,z=1.58,y=1.31)
+
+
+class EstimatePZKNNTask(EstimatePZTask):
+    """ Task that runs RAIL KNN algorithm for p(z) estimation """
+    
     ConfigClass = EstimatePZKNNConfig
     _DefaultName = "estimatePZKNN"
+
+    

@@ -38,7 +38,6 @@ from lsst.daf.butler import (
     DimensionUniverse,
     FileDataset,
 )
-from lsst.meas.pz.estimate_pz_task import EstimatePZTask
 from lsst.meas.pz.estimate_pz_task_trainz import EstimatePZTrainZTask
 from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNTask
 
@@ -111,12 +110,14 @@ class MeasPzTasksTestCase(unittest.TestCase):
             )
             to_delete.append(model_file_trainz)
         pz_model_trainz = PZModel.read(model_file_trainz)
-        task_config_trainz = EstimatePZTask.ConfigClass()
-        task_config_trainz.pz_algo.retarget(EstimatePZTrainZTask)
-        task_config_trainz.pz_algo.stage_name = "trainz"
-        task_config_trainz.pz_algo.output_mode = "return"
-        task_trainz = EstimatePZTask(True, config=task_config_trainz)
-        dd = butler.getDeferred("objectTable", skymap="DC2", tract=3829, patch=1)
+        task_config_trainz = EstimatePZTrainZTask.ConfigClass()
+        task_trainz = EstimatePZTrainZTask(True, config=task_config_trainz)
+        dd = butler.getDeferred(
+            "objectTable",
+            skymap="DC2",
+            tract=3829,
+            patch=1,
+        ).get(parameters=dict(columns=task_trainz.pz_algo.col_names()))
         out_trainz = task_trainz.run(pz_model_trainz, dd)
         out_trainz.pzEnsemble.write_to("output_trainz.hdf5")
         to_delete.append("output_trainz.hdf5")
@@ -137,15 +138,25 @@ class MeasPzTasksTestCase(unittest.TestCase):
             )
             to_delete.append(model_file_knn_lsst)
         pz_model_knn_lsst = PZModel.read(model_file_knn_lsst)
-
-        task_config_knn = EstimatePZTask.ConfigClass()
-        task_config_knn.pz_algo.retarget(EstimatePZKNNTask)
-        task_config_knn.pz_algo.stage_name = "knn"
-        task_config_knn.pz_algo.output_mode = "return"
-
-        task_knn = EstimatePZTask(True, config=task_config_knn)
-        dd = butler.getDeferred("objectTable", skymap="DC2", tract=3829, patch=1)
-
+        task_config_knn = EstimatePZKNNTask.ConfigClass()
+        task_knn = EstimatePZKNNTask(True, config=task_config_knn)
+        task_knn.config.pz_algo.bands=[
+            'mag_u_lsst',
+            'mag_g_lsst',
+            'mag_r_lsst',
+            'mag_i_lsst',
+            'mag_z_lsst',
+            'mag_y_lsst',
+        ]
+        task_knn.config.pz_algo.band_a_env=dict(u=4.81,g=3.64,r=2.70,i=2.06,z=1.58,y=1.31)
+        dd = butler.getDeferred(
+            "objectTable",
+            skymap="DC2",
+            tract=3829,
+            patch=1,
+        ).get(
+            parameters=dict(columns=task_knn.pz_algo.col_names()),
+        )
         out_knn = task_knn.run(pz_model_knn_lsst, dd)
         out_knn.pzEnsemble.write_to("output_knn_lsst.hdf5")
         to_delete.append("output_knn_lsst.hdf5")

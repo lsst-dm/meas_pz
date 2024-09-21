@@ -20,6 +20,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
+    "EstimatePZTrainZAlgoConfig",
+    "EstimatePZTrainZAlgoTask",
     "EstimatePZTrainZTask",
     "EstimatePZTrainZConfig",
 ]
@@ -29,11 +31,16 @@ import astropy.table as atable
 from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.train_z import TrainZEstimator
 
-from .estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
+from .estimate_pz_task import (
+    EstimatePZAlgoConfigBase,
+    EstimatePZAlgoTask,
+    EstimatePZTaskConfig,
+    EstimatePZTask,
+)
 
 
-class EstimatePZTrainZConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZTrainZTask
+class EstimatePZTrainZAlgoConfig(EstimatePZAlgoConfigBase):
+    """Config for EstimatePZTrainZAlgoTask
 
     This will select and comnfigure the TrainZEsimator p(z)
     estimation algorithm
@@ -47,10 +54,10 @@ class EstimatePZTrainZConfig(EstimatePZAlgoConfigBase):
         return TrainZEstimator
 
 
-EstimatePZTrainZConfig._make_fields()
+EstimatePZTrainZAlgoConfig._make_fields()
 
 
-class EstimatePZTrainZTask(EstimatePZAlgoTask):
+class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
     """SubTask that runs RAIL TrainZ algorithm for p(z) estimation
 
     See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
@@ -60,8 +67,8 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
     p(z) distribution (taken from the input model file) to every object.
     """
 
-    ConfigClass = EstimatePZTrainZConfig
-    _DefaultName = "estimatePZTrainZ"
+    ConfigClass = EstimatePZTrainZAlgoConfig
+    _DefaultName = "estimatePZTrainZAlgo"
 
     def _get_mags_and_errs(
         self,
@@ -82,3 +89,25 @@ class EstimatePZTrainZTask(EstimatePZAlgoTask):
                 99.0,
             )
         return mag_dict
+
+
+class EstimatePZTrainZConfig(EstimatePZTaskConfig):
+    """Config for EstimatePZTrainZTask
+    
+    Overrides setDefaults to use TrainZ algorithm
+    """
+
+    def setDefaults(self):
+        self.pz_algo.retarget(EstimatePZTrainZAlgoTask)
+        self.pz_algo.stage_name='trainz'
+        self.pz_algo.output_mode='return'
+        self.pz_algo.band_a_env=dict(i=2.06)
+
+
+class EstimatePZTrainZTask(EstimatePZTask):
+    """ Task that runs RAIL TrainZ algorithm for p(z) estimation """
+    
+    ConfigClass = EstimatePZTrainZConfig
+    _DefaultName = "estimatePZTrainZ"
+
+    
