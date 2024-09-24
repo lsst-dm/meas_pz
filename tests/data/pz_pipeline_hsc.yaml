@@ -1,0 +1,20 @@
+description: |
+  Photo-z madness
+tasks:
+  pz_trainz:
+    class: lsst.meas.pz.estimate_pz_task_trainz.EstimatePZTrainZTask
+    config:
+      connections.pzModel: 'pzModel_trainz'
+      connections.pzEnsemble: 'pz_estimate_trainz'
+  pz_knn:
+    class: lsst.meas.pz.estimate_pz_task_knn.EstimatePZKNNTask
+    config:
+      connections.pzModel: 'pzModel_knn'
+      connections.pzEnsemble: 'pz_estimate_knn'
+subsets:
+  all_pz:
+    subset:
+      - pz_trainz
+      - pz_knn
+    description: |
+      All of the photoz algorithms
