@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-butler remove-collections --no-confirm ../ci_hsc_gen3/DATA u/testing/pz_rail_testing
-butler remove-runs --no-confirm ../ci_hsc_gen3/DATA "u/testing/pz_rail_testing*"
-butler remove-runs --no-confirm ../ci_hsc_gen3/DATA "u/testing/pz_models"
+butler remove-collections --no-confirm ../ci_hsc_gen3/DATA u/${USER}/pz_rail_testing
+butler remove-runs --no-confirm ../ci_hsc_gen3/DATA "u/${USER}/pz_rail_testing*"
+butler remove-runs --no-confirm ../ci_hsc_gen3/DATA "u/${USER}/pz_models"
 butler remove-dataset-type ../ci_hsc_gen3/DATA/ pz_estimate_knn
 butler remove-dataset-type ../ci_hsc_gen3/DATA/ pz_knn_config
 butler remove-dataset-type ../ci_hsc_gen3/DATA/ pz_knn_log

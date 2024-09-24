@@ -47,6 +47,7 @@ TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
 CI_HSC_GEN3_DIR = os.environ.get("CI_HSC_GEN3_DIR", None)
 DAF_BUTLER_REPOSITORY_INDEX = os.environ.get("DAF_BUTLER_REPOSITORY_INDEX", None)
 IS_S3DF = DAF_BUTLER_REPOSITORY_INDEX == "/sdf/group/rubin/shared/data-repos.yaml"
+USER = os.environ['USER']
 
 
 class MeasPzTasksTestCase(unittest.TestCase):
@@ -180,7 +181,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
         butler = self.makeButler_ci_hsc(writeable=True)
         butler.registry.registerDatasetType(self.pzModel_trainz_datasetType)
         butler.registry.registerDatasetType(self.pzModel_knn_datasetType)
-        butler.registry.registerRun("u/$USER/pz_models")
+        butler.registry.registerRun(f"u/{USER}/pz_models")
 
         pzModel_trainz_datasetRef = DatasetRef(
             self.pzModel_trainz_datasetType,
@@ -188,7 +189,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 self.pzModel_dimension_group,
                 ("HSC",),
             ),
-            run="u/$USER/pz_models",
+            run=f"u/{USER}/pz_models",
         )
 
         pzModel_knn_datasetRef = DatasetRef(
@@ -197,7 +198,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 self.pzModel_dimension_group,
                 ("HSC",),
             ),
-            run="u/$USER/pz_models",
+            run=f"u/{USER}/pz_models",
         )
 
         butler.ingest(
@@ -222,9 +223,9 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 "-b",
                 os.path.join(CI_HSC_GEN3_DIR, "DATA"),
                 "-i",
-                "HSC/runs/ci_hsc,u/$USER/pz_models",
+                f"HSC/runs/ci_hsc,u/{USER}/pz_models",
                 "-o",
-                "u/$USER/pz_rail_testing",
+                f"u/{USER}/pz_rail_testing",
                 "-p",
                 os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
                 "-d",
@@ -237,12 +238,12 @@ class MeasPzTasksTestCase(unittest.TestCase):
         output_pz_train = butler.get(
             "pz_estimate_trainz",
             dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=["u/$USER/pz_rail_testing"],
+            collections=[f"u/{USER}/pz_rail_testing"],
         )
         output_pz_knn = butler.get(
             "pz_estimate_knn",
             dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=["u/$USER/pz_rail_testing"],
+            collections=[f"u/{USER}/pz_rail_testing"],
         )
 
         assert isinstance(output_pz_train, qp.Ensemble)
