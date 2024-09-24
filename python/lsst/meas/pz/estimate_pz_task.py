@@ -34,7 +34,6 @@ import numpy as np
 from ceci.config import StageConfig as CeciStageConfig
 from ceci.config import StageParameter as CeciParam
 
-# from ceci.stage import PipelineStage as CeciPipelineStage
 from lsst.pipe.base import (
     PipelineTask,
     PipelineTaskConfig,
@@ -43,7 +42,7 @@ from lsst.pipe.base import (
     Task,
 )
 
-import astropy.table as atable
+from astropy.table import Table
 from rail.core.model import Model
 from rail.estimation.estimator import CatEstimator
 from rail.interfaces import PZFactory
@@ -64,7 +63,6 @@ class EstimatePZConnections(
         storageClass="PZModel",
         dimensions=["instrument"],
         isCalibration=True,
-        # lookupFunction=_pzModelLookup,
     )
 
     objectTable = cT.Input(
@@ -324,14 +322,14 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def _get_mags_and_errs(
         self,
-        fluxes: atable,
+        fluxes: Table,
         mag_offset: float,
     ) -> dict[str, np.array]:
         """Fill and return a numpy dict with mags and mag errors
 
         Parameters
         ----------
-        fluxes : atable
+        fluxes : Table
             Input fluxes and flux errors
 
         mag_offset : float
@@ -411,13 +409,13 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def run(
         self,
-        fluxes: atable,
+        fluxes: Table,
     ) -> Struct:
         """Run a p(z) estimation algorithm
 
         Parameters
         ----------
-        fluxes: atable
+        fluxes: Table
             Fluxes used to compute the redshifts
 
         Returns
@@ -485,7 +483,7 @@ class EstimatePZTask(PipelineTask):
     def run(
         self,
         pzModel: Model,
-        fluxes: atable,
+        fluxes: Table,
         skip_init: bool = False,
     ) -> Struct:
         if not skip_init:
