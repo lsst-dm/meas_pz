@@ -180,7 +180,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
         butler = self.makeButler_ci_hsc(writeable=True)
         butler.registry.registerDatasetType(self.pzModel_trainz_datasetType)
         butler.registry.registerDatasetType(self.pzModel_knn_datasetType)
-        butler.registry.registerRun("u/testing/pz_models")
+        butler.registry.registerRun("u/$USER/pz_models")
 
         pzModel_trainz_datasetRef = DatasetRef(
             self.pzModel_trainz_datasetType,
@@ -188,7 +188,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 self.pzModel_dimension_group,
                 ("HSC",),
             ),
-            run="u/testing/pz_models",
+            run="u/$USER/pz_models",
         )
 
         pzModel_knn_datasetRef = DatasetRef(
@@ -197,7 +197,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 self.pzModel_dimension_group,
                 ("HSC",),
             ),
-            run="u/testing/pz_models",
+            run="u/$USER/pz_models",
         )
 
         butler.ingest(
@@ -222,9 +222,9 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 "-b",
                 os.path.join(CI_HSC_GEN3_DIR, "DATA"),
                 "-i",
-                "HSC/runs/ci_hsc,u/testing/pz_models",
+                "HSC/runs/ci_hsc,u/$USER/pz_models",
                 "-o",
-                "u/testing/pz_rail_testing",
+                "u/$USER/pz_rail_testing",
                 "-p",
                 os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
                 "-d",
@@ -237,12 +237,12 @@ class MeasPzTasksTestCase(unittest.TestCase):
         output_pz_train = butler.get(
             "pz_estimate_trainz",
             dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=["u/testing/pz_rail_testing"],
+            collections=["u/$USER/pz_rail_testing"],
         )
         output_pz_knn = butler.get(
             "pz_estimate_knn",
             dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=["u/testing/pz_rail_testing"],
+            collections=["u/$USER/pz_rail_testing"],
         )
 
         assert isinstance(output_pz_train, qp.Ensemble)
