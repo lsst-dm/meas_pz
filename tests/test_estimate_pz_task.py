@@ -214,7 +214,7 @@ class MeasPzTasksTestCase(unittest.TestCase):
             ),
         )
 
-        subprocess.run(
+        result = subprocess.run(
             [
                 "pipetask",
                 "run",
@@ -231,6 +231,8 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 "skymap='discrete/ci_hsc' AND tract=0 AND patch=69",
             ]
         )
+
+        assert result.returncode == 0
 
         output_pz_train = butler.get(
             "pz_estimate_trainz",
@@ -250,3 +252,10 @@ class MeasPzTasksTestCase(unittest.TestCase):
 
         for fdel_ in to_delete:
             os.unlink(fdel_)
+
+        # Success, go ahead and cleanup the butler
+        subprocess.run(
+            [
+                "tests/cleanup.sh",
+            ]
+        )
