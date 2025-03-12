@@ -28,25 +28,23 @@ __all__ = [
 
 import numpy as np
 from astropy.table import Table
-from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.train_z import TrainZEstimator
+from rail.estimation.estimator import CatEstimator
 
 from .estimate_pz_task import (
     EstimatePZAlgoConfigBase,
     EstimatePZAlgoTask,
-    EstimatePZTaskConfig,
     EstimatePZTask,
+    EstimatePZTaskConfig,
 )
 
 
 class EstimatePZTrainZAlgoConfig(EstimatePZAlgoConfigBase):
     """Config for EstimatePZTrainZAlgoTask
 
-    This will select and comnfigure the TrainZEsimator p(z)
+    This will select and configure the TrainZEsimator p(z)
     estimation algorithm
 
-    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
-    for parameters and default values.
     """
 
     @classmethod
@@ -74,7 +72,7 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
         self,
         fluxes: Table,
         mag_offset: float,
-    ) -> dict[str, np.array]:
+    ) -> dict[str, np.ndarray]:
 
         flux_names = self._get_flux_names()
         mag_names = self._get_mag_names()
@@ -97,7 +95,7 @@ class EstimatePZTrainZConfig(EstimatePZTaskConfig):
     Overrides setDefaults to use TrainZ algorithm
     """
 
-    def setDefaults(self):
+    def setDefaults(self) -> None:
         self.pz_algo.retarget(EstimatePZTrainZAlgoTask)
         self.pz_algo.stage_name = "trainz"
         self.pz_algo.output_mode = "return"

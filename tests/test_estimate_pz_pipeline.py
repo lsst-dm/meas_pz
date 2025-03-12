@@ -19,18 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for meaz_pz
-"""
-
 import os
 import tempfile
 import unittest
 from typing import Any
 
-from lsst.daf.butler import (
-    Butler,
-    Config,
-)
+from lsst.daf.butler import Butler, Config
 from lsst.daf.butler.tests import DatastoreMock
 from lsst.daf.butler.tests.utils import makeTestTempDir, removeTestTempDir
 from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester
@@ -41,12 +35,22 @@ TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
 
 
 class MeasPzPipelineTestCase(unittest.TestCase):
+    """Test the PZ pipeline plumbing for fully supported algorithms.
 
-    def setUp(self):
+    This uses the `PipelineStepTester` to test
+    a test pipeline define in tests/data/pz_pipeline_hsc.yaml
+
+    This should include any algorithms that are
+    including in the rubin-env environment.
+
+    For now that is knn and trainz.
+    """
+
+    def setUp(self) -> None:
         self.root = makeTestTempDir(TEST_DATA_DIR)
         self.maxDiff = None
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         removeTestTempDir(self.root)
 
     def makeButler(self, **kwargs: Any) -> Butler:
@@ -61,23 +65,25 @@ class MeasPzPipelineTestCase(unittest.TestCase):
         DatastoreMock.apply(butler)
         return butler
 
-    def test_hsc_pz_pipeline(self):
+    def test_hsc_pz_pipeline(self) -> None:
         butler = self.makeButler(writeable=True)
 
         tester = PipelineStepTester(
             os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
             ["#all_pz"],
             [
-                ("objectTable", {"skymap", "tract", "patch"}, "DataFrame", False),
+                ("objectTable", {"skymap", "tract", "patch"}, "ArrowAstropy", False),
                 ("pzModel_trainz", {"instrument"}, "PZModel", True),
                 ("pzModel_knn", {"instrument"}, "PZModel", True),
             ],
             expected_inputs={
                 "objectTable",
-                "pzModel_trainz",
+                "pzModel_bpz",
                 "pzModel_knn",
+                "pzModel_trainz",
             },
             expected_outputs={
+                "pz_estimate_bpz",
                 "pz_estimate_knn",
                 "pz_estimate_trainz",
             },
