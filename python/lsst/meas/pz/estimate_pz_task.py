@@ -27,13 +27,14 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import lsst.pex.config as pexConfig
 import lsst.pipe.base.connectionTypes as cT
 import numpy as np
+from astropy.table import Table
 from ceci.config import StageConfig as CeciStageConfig
 from ceci.config import StageParameter as CeciParam
-
 from lsst.pipe.base import (
     PipelineTask,
     PipelineTaskConfig,
@@ -41,8 +42,6 @@ from lsst.pipe.base import (
     Struct,
     Task,
 )
-
-from astropy.table import Table
 from rail.core.model import Model
 from rail.estimation.estimator import CatEstimator
 from rail.interfaces import PZFactory
@@ -107,38 +106,84 @@ class EstimatePZAlgoConfigBase(
     def estimator_class(cls) -> type[CatEstimator]:
         raise NotImplementedError()
 
+    default_a_env_values = dict(
+        u=4.81,
+        g=3.64,
+        r=2.70,
+        i=2.06,
+        z=1.58,
+        y=1.31,
+    )
+
+    default_mag_limit_values = dict(
+        u=29.04,
+        g=29.04,
+        r=29.06,
+        i=28.62,
+        z=27.98,
+        y=27.05,
+    )
+
+    def get_band_a_env_dict(self):
+        """Return the set of a_envs to use"""
+        return {
+            band_: self.default_a_env_values[band_] for band_ in self.bands_to_convert
+        }
+
+    def get_mag_lim_dict(self):
+        """Return the set of maglims to use"""
+        return {
+            self.mag_template.format(band=band_): self.default_mag_limit_values[band_]
+            for band_ in self.bands_to_convert
+        }
+
+    def get_mag_name_list(self):
+        """Return the set of band names"""
+        return [self.mag_template.format(band=band_) for band_ in self.bands_to_convert]
+
+    def get_mag_err_name_list(self):
+        """Return the set of band names"""
+        return [
+            self.mag_err_template.format(band=band_) for band_ in self.bands_to_convert
+        ]
+
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
     mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
+    deredden = pexConfig.Field[bool](
+        doc="Apply dereddening",
+        default=True,
+    )
+    bands_to_convert = pexConfig.ListField[str](
+        doc="Names of bands to convert fluxs to mags for RAIL",
+        default=["u", "g", "r", "i", "z", "y"],
+    )
     flux_column_template = pexConfig.Field[str](
         doc="Template for flux column names",
         default="{band}_gaap1p0Flux",
+        # default="{band}_cModelFlux",
     )
     flux_err_column_template = pexConfig.Field[str](
         doc="Template for flux error column names",
         default="{band}_gaap1p0FluxErr",
+        # default="{band}_cModelFluxErr",
     )
     mag_template = pexConfig.Field[str](
         doc="Template for magnitude names",
-        default="mag_{band}_lsst",
+        default="{band}_gaap1p0Mag"
+        # default="{band}_cModelMag",
     )
     mag_err_template = pexConfig.Field[str](
         doc="Template for magntitude error names",
-        default="mag_err_{band}_lsst",
+        default="{band}_gaap1p0MagErr",
+        # default="{band}_cModelMagErr",
     )
     band_a_env = pexConfig.DictField[str, float](
         doc="Reddening parameters",
-        default=dict(
-            u=4.81,
-            g=3.64,
-            r=2.70,
-            i=2.06,
-            z=1.58,
-            y=1.31,
-        ),
+        default=default_a_env_values,
     )
 
     @classmethod
-    def _make_fields(cls):
+    def _make_fields(cls) -> None:
         """import the RAIL estimation stage
         and loop through the stage config parameters and make corresponding
         pex.config parameters.
@@ -157,11 +202,16 @@ class EstimatePZAlgoConfigBase(
                         ),
                     )
                 elif val.dtype in [list]:
+                    # this is a hack, but it works.
+                    if val.default:
+                        item_type = type(val.default[0])
+                    else:
+                        item_type = str
                     setattr(
                         cls,
                         key,
                         pexConfig.ListField(
-                            doc=val.msg, dtype=str, default=val.default
+                            doc=val.msg, dtype=item_type, default=val.default
                         ),
                     )
                 elif val.dtype in [dict]:
@@ -186,15 +236,15 @@ class EstimatePZAlgoTask(Task, ABC):
 
     mag_conv = np.log(10) * 0.4
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
     @staticmethod
     def _flux_to_mag(
-        flux_vals: np.array,
+        flux_vals: np.ndarray,
         mag_offset: float,
         nondetect_val: float,
-    ) -> np.array:
+    ) -> np.ndarray:
         """Convert flux to magnitude
 
         Parameters
@@ -223,11 +273,11 @@ class EstimatePZAlgoTask(Task, ABC):
 
     @staticmethod
     def _flux_err_to_mag_err(
-        flux_vals: np.array,
-        flux_err_vals: np.array,
+        flux_vals: np.ndarray,
+        flux_err_vals: np.ndarray,
         mag_conv: float,
         nondetect_val: float,
-    ) -> np.array:
+    ) -> np.ndarray:
         """Config flux error to magnitude error
 
         Parameters
@@ -254,11 +304,11 @@ class EstimatePZAlgoTask(Task, ABC):
 
     @staticmethod
     def _deredden_mags(
-        data: dict[str, np.array],
+        data: dict[str, np.ndarray],
         a_env_dict: dict[str, float],
         mag_names: dict[str, str],
         nondetect_val: float,
-    ) -> dict[str, np.array]:
+    ) -> dict[str, np.ndarray]:
         """Deredden the magnitdues
 
         Parameters
@@ -296,35 +346,35 @@ class EstimatePZAlgoTask(Task, ABC):
         """Return a dict mapping band to flux column name"""
         return {
             band: self.config.flux_column_template.format(band=band)
-            for band in self.config.band_a_env.keys()
+            for band in self.config.bands_to_convert
         }
 
     def _get_flux_err_names(self) -> dict[str, str]:
         """Return a dict mapping band to flux error column name"""
         return {
             band: self.config.flux_err_column_template.format(band=band)
-            for band in self.config.band_a_env.keys()
+            for band in self.config.bands_to_convert
         }
 
     def _get_mag_names(self) -> dict[str, str]:
         """Return a dict mapping band to mag column name"""
         return {
             band: self.config.mag_template.format(band=band)
-            for band in self.config.band_a_env.keys()
+            for band in self.config.bands_to_convert
         }
 
     def _get_mag_err_names(self) -> dict[str, str]:
         """Return a dict mapping band to mag error column name"""
         return {
             band: self.config.mag_err_template.format(band=band)
-            for band in self.config.band_a_env.keys()
+            for band in self.config.bands_to_convert
         }
 
     def _get_mags_and_errs(
         self,
         fluxes: Table,
         mag_offset: float,
-    ) -> dict[str, np.array]:
+    ) -> dict[str, np.ndarray]:
         """Fill and return a numpy dict with mags and mag errors
 
         Parameters
@@ -345,6 +395,11 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_names = self._get_mag_names()
         flux_err_names = self._get_flux_err_names()
         mag_err_names = self._get_mag_err_names()
+        nondetect_val = (
+            self.config.nondetect_val
+            if hasattr(self.config, "nondetect_val")
+            else np.nan
+        )
         # output dict
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
@@ -354,14 +409,14 @@ class EstimatePZAlgoTask(Task, ABC):
             mag_dict[mag_names[band]] = self._flux_to_mag(
                 fluxVals,
                 mag_offset,
-                self.config.nondetect_val,
+                nondetect_val,
             )
             if flux_err_names:
                 mag_dict[mag_err_names[band]] = self._flux_err_to_mag_err(
                     fluxVals,
                     fluxErrVals,
                     self.mag_conv,
-                    self.config.nondetect_val,
+                    nondetect_val,
                 )
 
         # return the dict with the mags
@@ -395,16 +450,18 @@ class EstimatePZAlgoTask(Task, ABC):
             input_path="dummy.in",
             **rail_kwargs,
         )
+        self._stage._initialize_run()
 
     def col_names(
         self,
     ) -> list[str]:
         """Get the list of column names to read from the input data"""
-        the_col_names = (
-            list(self._get_flux_names().values())
-            + list(self._get_flux_err_names().values())
-            + ["ebv"]
+        the_col_names = list(self._get_flux_names().values()) + list(
+            self._get_flux_err_names().values()
         )
+        if self.config.deredden:
+            the_col_names += ["ebv"]
+
         return the_col_names
 
     def run(
@@ -426,14 +483,21 @@ class EstimatePZAlgoTask(Task, ABC):
         n_obj = len(fluxes)
         # Convert fluxes to mags
         mags = self._get_mags_and_errs(fluxes, self.config.mag_offset)
-        # De-redden
-        mags["ebv"] = fluxes["ebv"]
-        mags = self._deredden_mags(
-            mags,
-            self.config.band_a_env,
-            self._get_mag_names(),
-            self.config.nondetect_val,
+        nondetect_val = (
+            self.config.nondetect_val
+            if hasattr(self.config, "nondetect_val")
+            else np.nan
         )
+
+        # De-redden
+        if self.config.deredden:
+            mags["ebv"] = fluxes["ebv"]
+            mags = self._deredden_mags(
+                mags,
+                self.config.band_a_env,
+                self._get_mag_names(),
+                nondetect_val,
+            )
 
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object

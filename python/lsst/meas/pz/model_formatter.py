@@ -29,9 +29,9 @@ __all__ = ("ModelFormatter",)
 
 from typing import Any
 
-from rail.core.model import Model as RailModel
 from lsst.daf.butler import FormatterV2
 from lsst.resources import ResourcePath
+from rail.core.model import Model as RailModel
 
 
 class ModelFormatter(FormatterV2):

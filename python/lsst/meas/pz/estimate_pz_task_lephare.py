@@ -20,13 +20,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
-    "EstimatePZKNNAlgoConfig",
-    "EstimatePZKNNAlgoTask",
-    "EstimatePZKNNTask",
-    "EstimatePZKNNConfig",
+    "EstimatePZLephareAlgoConfig",
+    "EstimatePZLephareAlgoTask",
+    "EstimatePZLephareTask",
+    "EstimatePZLephareConfig",
 ]
 
-from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
+from rail.estimation.algos.lephare import LephareEstimator
 from rail.estimation.estimator import CatEstimator
 
 from .estimate_pz_task import (
@@ -37,53 +37,56 @@ from .estimate_pz_task import (
 )
 
 
-class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNAlgoTask
+class EstimatePZLephareAlgoConfig(EstimatePZAlgoConfigBase):
+    """Config for EstimatePZLephareAlgoTask
 
-    This will select and configure the KNearNeighEstimator p(z)
+    This will select and configure the LephareEstimator p(z)
     estimation algorithm
 
     """
 
     @classmethod
     def estimator_class(cls) -> type[CatEstimator]:
-        return KNearNeighEstimator
+        return LephareEstimator
 
 
-EstimatePZKNNAlgoConfig._make_fields()
+EstimatePZLephareAlgoConfig._make_fields()
 
 
-class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL KNN algorithm for p(z) estimation
+class EstimatePZLephareAlgoTask(EstimatePZAlgoTask):
+    """SubTask that runs RAIL Lephare algorithm for p(z) estimation
 
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
+    See https://github.com/LSSTDESC/rail_lephare/blob/src/rail/estimation/algos/lephare.py  # noqa
     for algorithm implementation.
 
+    Lephare estimates the p(z) distribution by taking
+    a weighted mixture of the nearest neigheboors in
+    color space.
     """
 
-    ConfigClass = EstimatePZKNNAlgoConfig
-    _DefaultName = "estimatePZKNNAlgo"
+    ConfigClass = EstimatePZLephareAlgoConfig
+    _DefaultName = "estimatePZLephareAlgo"
 
 
-class EstimatePZKNNConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZKNNTask
+class EstimatePZLephareConfig(EstimatePZTaskConfig):
+    """Config for EstimatePZLephareTask
 
-    Overrides setDefaults to use KNN algorithm
+    Overrides setDefaults to use Lephare algorithm
     """
 
     def setDefaults(self) -> None:
-        self.pz_algo.retarget(EstimatePZKNNAlgoTask)
-        self.pz_algo.stage_name = "knn"
+        self.pz_algo.retarget(EstimatePZLephareAlgoTask)
+        self.pz_algo.stage_name = "lephare"
         self.pz_algo.output_mode = "return"
         self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band='i')
         self.pz_algo.bands = self.pz_algo.get_mag_name_list()
+        self.pz_algo.err_bands = self.pz_algo.get_mag_err_name_list()
         self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
         self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
 
 
-class EstimatePZKNNTask(EstimatePZTask):
-    """Task that runs RAIL KNN algorithm for p(z) estimation"""
+class EstimatePZLephareTask(EstimatePZTask):
+    """Task that runs RAIL Lephare algorithm for p(z) estimation"""
 
-    ConfigClass = EstimatePZKNNConfig
-    _DefaultName = "estimatePZKNN"
+    ConfigClass = EstimatePZLephareConfig
+    _DefaultName = "estimatePZLephare"

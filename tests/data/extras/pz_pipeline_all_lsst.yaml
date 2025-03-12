@@ -1,0 +1,51 @@
+description: |
+  Photo-z madness
+tasks:
+  pz_bpz:
+    class: lsst.meas.pz.estimate_pz_task_bpz.EstimatePZBPZTask
+    config:
+      connections.pzModel: 'pzModel_bpz'
+      connections.pzEnsemble: 'pz_estimate_bpz'
+  pz_dnf:
+    class: lsst.meas.pz.estimate_pz_task_dnf.EstimatePZDNFTask
+    config:
+      connections.pzModel: 'pzModel_dnf'
+      connections.pzEnsemble: 'pz_estimate_dnf'
+  pz_fzboost:
+    class: lsst.meas.pz.estimate_pz_task_fzboost.EstimatePZFZBoostTask
+    config:
+      connections.pzModel: 'pzModel_fzboost'
+      connections.pzEnsemble: 'pz_estimate_fzboost'
+  pz_gpz:
+    class: lsst.meas.pz.estimate_pz_task_gpz.EstimatePZGPZTask
+    config:
+      connections.pzModel: 'pzModel_gpz'
+      connections.pzEnsemble: 'pz_estimate_gpz'
+  pz_tpz:
+    class: lsst.meas.pz.estimate_pz_task_tpz.EstimatePZTPZTask
+    config:
+      connections.pzModel: 'pzModel_tpz'
+      connections.pzEnsemble: 'pz_estimate_tpz'
+  pz_lephare:
+    class: lsst.meas.pz.estimate_pz_task_lephare.EstimatePZLephareTask
+    config:
+      connections.pzModel: 'pzModel_lephare'
+      connections.pzEnsemble: 'pz_estimate_lephare'      
+  pz_cmnn:
+    class: lsst.meas.pz.estimate_pz_task_cmnn.EstimatePZCMNNTask
+    config:
+      connections.pzModel: 'pzModel_cmnn'
+      connections.pzEnsemble: 'pz_estimate_cmnn'
+
+subsets:
+  all_pz:
+    subset:
+      - pz_bpz
+      - pz_dnf
+      - pz_fzboost
+      - pz_gpz
+      - pz_tpz
+      - pz_cmnn
+      - pz_lephare
+    description: |
+      All of the photoz algorithms

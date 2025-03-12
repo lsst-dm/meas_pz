@@ -20,13 +20,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
-    "EstimatePZKNNAlgoConfig",
-    "EstimatePZKNNAlgoTask",
-    "EstimatePZKNNTask",
-    "EstimatePZKNNConfig",
+    "EstimatePZTPZAlgoConfig",
+    "EstimatePZTPZAlgoTask",
+    "EstimatePZTPZTask",
+    "EstimatePZTPZConfig",
 ]
 
-from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
+from rail.estimation.algos.tpz_lite import TPZliteEstimator
 from rail.estimation.estimator import CatEstimator
 
 from .estimate_pz_task import (
@@ -37,53 +37,52 @@ from .estimate_pz_task import (
 )
 
 
-class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNAlgoTask
+class EstimatePZTPZAlgoConfig(EstimatePZAlgoConfigBase):
+    """Config for EstimatePZTPZAlgoTask
 
-    This will select and configure the KNearNeighEstimator p(z)
+    This will select and configure the TPZliteEstimator p(z)
     estimation algorithm
 
+    See https://github.com/LSSTDESC/rail_tpz/blob/src/rail/estimation/algos/tpz_lite.py  # noqa
+    for parameters and default values.
     """
 
     @classmethod
     def estimator_class(cls) -> type[CatEstimator]:
-        return KNearNeighEstimator
+        return TPZliteEstimator
 
 
-EstimatePZKNNAlgoConfig._make_fields()
+EstimatePZTPZAlgoConfig._make_fields()
 
 
-class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL KNN algorithm for p(z) estimation
+class EstimatePZTPZAlgoTask(EstimatePZAlgoTask):
+    """SubTask that runs RAIL TPZ algorithm for p(z) estimation
 
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
-    for algorithm implementation.
-
+    See https://github.com/LSSTDESC/rail_tpz/blob/src/rail/estimation/algos/tpz_lite.py  # noqa
+    for parameters and default values.
     """
 
-    ConfigClass = EstimatePZKNNAlgoConfig
-    _DefaultName = "estimatePZKNNAlgo"
+    ConfigClass = EstimatePZTPZAlgoConfig
+    _DefaultName = "estimatePZTPZAlgo"
 
 
-class EstimatePZKNNConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZKNNTask
+class EstimatePZTPZConfig(EstimatePZTaskConfig):
+    """Config for EstimatePZTPZTask
 
-    Overrides setDefaults to use KNN algorithm
+    Overrides setDefaults to use TPZ algorithm
     """
 
     def setDefaults(self) -> None:
-        self.pz_algo.retarget(EstimatePZKNNAlgoTask)
-        self.pz_algo.stage_name = "knn"
+        self.pz_algo.retarget(EstimatePZTPZAlgoTask)
+        self.pz_algo.stage_name = "tpz"
         self.pz_algo.output_mode = "return"
         self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band='i')
-        self.pz_algo.bands = self.pz_algo.get_mag_name_list()
         self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
         self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
 
 
-class EstimatePZKNNTask(EstimatePZTask):
-    """Task that runs RAIL KNN algorithm for p(z) estimation"""
+class EstimatePZTPZTask(EstimatePZTask):
+    """Task that runs RAIL TPZ algorithm for p(z) estimation"""
 
-    ConfigClass = EstimatePZKNNConfig
-    _DefaultName = "estimatePZKNN"
+    ConfigClass = EstimatePZTPZConfig
+    _DefaultName = "estimatePZTPZ"

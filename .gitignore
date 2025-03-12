@@ -8,6 +8,7 @@ config.log
 *.pyc
 *_wrap.cc
 *Lib.py
+*dist-info
 
 # Built by sconsUtils
 version.py
@@ -18,4 +19,4 @@ tests/.tests
 pytest_session.txt
 .cache/
 .pytest_cache
-.coverage
+.coverage*
