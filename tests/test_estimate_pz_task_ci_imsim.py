@@ -35,17 +35,20 @@ from lsst.daf.butler import (
     FileDataset,
 )
 
-PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
-TEST_DIR = os.path.abspath(os.path.dirname(__file__))
-TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
-CI_HSC_GEN3_DIR = os.environ.get("CI_HSC_GEN3_DIR", None)
+MEAS_PZ_DIR = os.environ.get("MEAS_PZ_DIR")
+PIPELINES_DIR = os.path.join(MEAS_PZ_DIR, "pipelines")
+CI_IMSIM_DIR = os.environ.get("CI_IMSIM_DIR", None)
 USER = os.environ.get("USER", "MysteriousStranger")
+
+skymap = "discrete/ci_imsim/4k"
+tract = 0
+patch = 24
 
 
 class MeasPzTasksTestCase(unittest.TestCase):
     """Test the PZ pipeline tasks for fully supported algorithms.
 
-    This will run the pipeline tasks against CI_HSC_GEN3
+    This will run the pipeline tasks against CI_IMSIM
 
     This should include any algorithms that are wrapped in meas_pz.
 
@@ -70,8 +73,8 @@ class MeasPzTasksTestCase(unittest.TestCase):
         ["instrument"],
     )
 
-    pzModel_trainz_datasetType = DatasetType(
-        "pzModel_trainz",
+    pzModel_bpz_datasetType = DatasetType(
+        "pzModel_bpz",
         dimensions=pzModel_dimension_group,
         storageClass="PZModel",
         isCalibration=True,
@@ -84,28 +87,37 @@ class MeasPzTasksTestCase(unittest.TestCase):
         isCalibration=True,
     )
 
+    pzModel_trainz_datasetType = DatasetType(
+        "pzModel_trainz",
+        dimensions=pzModel_dimension_group,
+        storageClass="PZModel",
+        isCalibration=True,
+    )
+
     dataset_types = [
-        pzModel_trainz_datasetType,
+        pzModel_bpz_datasetType,
         pzModel_knn_datasetType,
+        pzModel_trainz_datasetType,
     ]
 
     model_files = [
-        "models/hsc/model_inform_trainz_wrap.pickle",
-        "models/hsc/model_inform_knn_wrap.pickle",
+        "models/dc2/model_inform_bpz_wrap.pickle",
+        "models/dc2/model_inform_knn_wrap.pickle",
+        "models/dc2/model_inform_trainz_wrap.pickle",
     ]
 
-    def makeButler_ci_hsc(self, **kwargs: Any) -> Butler:
-        assert CI_HSC_GEN3_DIR
+    def makeButler_ci_imsim(self, **kwargs: Any) -> Butler:
+        assert CI_IMSIM_DIR
         butler = Butler.from_config(
-            os.path.abspath(os.path.join(CI_HSC_GEN3_DIR, "DATA")), **kwargs
+            os.path.abspath(os.path.join(CI_IMSIM_DIR, "DATA")), **kwargs
         )
         return butler
 
-    @unittest.skipIf(CI_HSC_GEN3_DIR is None, "CI_HSC_GEN3 not installed")
-    def test_pz_tasks_ci_hsc(self) -> None:
-        assert CI_HSC_GEN3_DIR
+    @unittest.skipIf(CI_IMSIM_DIR is None, "CI_IMSIM not installed")
+    def test_pz_tasks_ci_imsim(self) -> None:
+        assert CI_IMSIM_DIR
 
-        butler = self.makeButler_ci_hsc(writeable=True)
+        butler = self.makeButler_ci_imsim(writeable=True)
         butler.registry.registerRun(f"u/{USER}/pz_models")
 
         for model_file_, dataset_type in zip(self.model_files, self.dataset_types):
@@ -120,11 +132,13 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 dataset_type,
                 DataCoordinate.from_full_values(
                     self.pzModel_dimension_group,
-                    ("HSC",),
+                    ("LSSTCam-imSim",),
                 ),
                 run=f"u/{USER}/pz_models",
             )
             butler.ingest(FileDataset(modelpath, dataset_ref))
+
+        collection = f"u/{USER}/pz_rail_testing"
 
         result = subprocess.run(
             [
@@ -132,35 +146,31 @@ class MeasPzTasksTestCase(unittest.TestCase):
                 "run",
                 "--register-dataset-types",
                 "-b",
-                os.path.join(CI_HSC_GEN3_DIR, "DATA"),
+                os.path.join(CI_IMSIM_DIR, "DATA"),
                 "-i",
-                f"HSC/runs/ci_hsc,u/{USER}/pz_models",
+                f"LSSTCam-imSim/runs/ci_imsim,u/{USER}/pz_models",
                 "-o",
-                f"u/{USER}/pz_rail_testing",
+                collection,
                 "-p",
-                os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
+                os.path.join(PIPELINES_DIR, "photoz.yaml"),
                 "-d",
-                "skymap='discrete/ci_hsc' AND tract=0 AND patch=69",
+                f"skymap='{skymap}' AND tract={tract} AND patch={patch}",
             ]
         )
 
         assert result.returncode == 0
 
-        output_pz_train = butler.get(
-            "pz_estimate_trainz",
-            dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=[f"u/{USER}/pz_rail_testing"],
-        )
-        output_pz_knn = butler.get(
-            "pz_estimate_knn",
-            dict(skymap="discrete/ci_hsc", tract=0, patch=69),
-            collections=[f"u/{USER}/pz_rail_testing"],
-        )
+        dataId = dict(skymap=skymap, tract=tract, patch=patch)
 
-        assert isinstance(output_pz_train, qp.Ensemble)
-        assert isinstance(output_pz_knn, qp.Ensemble)
+        npdf = None
 
-        assert output_pz_train.npdf == output_pz_knn.npdf
+        for model_name in ("bpz", "knn", "trainz"):
+            output = butler.get(f"pz_estimate_{model_name}", **dataId, collections=collection)
+            assert isinstance(output, qp.Ensemble)
+            if npdf is None:
+                npdf = output.npdf
+            else:
+                assert output.npdf == npdf
 
         # Success, go ahead and cleanup the butler
         subprocess.run(
