@@ -65,11 +65,11 @@ class MeasPzPipelineTestCase(unittest.TestCase):
         DatastoreMock.apply(butler)
         return butler
 
-    def test_hsc_pz_pipeline(self) -> None:
+    def test_pz_pipeline(self) -> None:
         butler = self.makeButler(writeable=True)
 
         tester = PipelineStepTester(
-            os.path.join(TEST_DATA_DIR, "pz_pipeline_hsc.yaml"),
+            os.path.join(PIPELINES_DIR, "photoz.yaml"),
             ["#all_pz"],
             [
                 ("objectTable", {"skymap", "tract", "patch"}, "ArrowAstropy", False),
@@ -78,12 +78,10 @@ class MeasPzPipelineTestCase(unittest.TestCase):
             ],
             expected_inputs={
                 "objectTable",
-                "pzModel_bpz",
                 "pzModel_knn",
                 "pzModel_trainz",
             },
             expected_outputs={
-                "pz_estimate_bpz",
                 "pz_estimate_knn",
                 "pz_estimate_trainz",
             },

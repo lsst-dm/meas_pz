@@ -175,6 +175,6 @@ class MeasPzTasksTestCase(unittest.TestCase):
         # Success, go ahead and cleanup the butler
         subprocess.run(
             [
-                "tests/cleanup.sh",
+                "tests/cleanup_ci_imsim.sh",
             ]
         )
