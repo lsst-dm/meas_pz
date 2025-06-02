@@ -22,6 +22,7 @@
 try:
     from rail.estimation.algos.bpz_lite import BPZliteEstimator
     from rail.estimation.estimator import CatEstimator
+
     has_bpz = True
 except ImportError:
     has_bpz = False
@@ -31,8 +32,8 @@ if has_bpz:
     __all__ = [
         "EstimatePZBPZAlgoConfig",
         "EstimatePZBPZAlgoTask",
-        "EstimatePZBPZTask",
         "EstimatePZBPZConfig",
+        "EstimatePZBPZTask",
     ]
 
     from .estimate_pz_task import (
@@ -41,7 +42,6 @@ if has_bpz:
         EstimatePZTask,
         EstimatePZTaskConfig,
     )
-
 
     class EstimatePZBPZAlgoConfig(EstimatePZAlgoConfigBase):
         """Config for EstimatePZBPZAlgoTask
@@ -55,21 +55,18 @@ if has_bpz:
         def estimator_class(cls) -> type[CatEstimator]:
             return BPZliteEstimator
 
-
     EstimatePZBPZAlgoConfig._make_fields()
-
 
     class EstimatePZBPZAlgoTask(EstimatePZAlgoTask):
         """SubTask that runs RAIL BPZ algorithm for p(z) estimation
 
-        See https://github.com/LSSTDESC/rail_bpz/blob/main/src/rail/estimation/algos/bpz_lite.py  # noqa
+        See https://github.com/LSSTDESC/rail_bpz/blob/main/src/rail/estimation/algos/bpz_lite.py
         for algorithm implementation.
 
         """
 
         ConfigClass = EstimatePZBPZAlgoConfig
         _DefaultName = "estimatePZBPZAlgo"
-
 
     class EstimatePZBPZConfig(EstimatePZTaskConfig):
         """Config for EstimatePZBPZTask
@@ -82,7 +79,7 @@ if has_bpz:
             self.pz_algo.stage_name = "bpz"
             self.pz_algo.output_mode = "return"
             self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-            self.pz_algo.ref_band = self.pz_algo.mag_template.format(band='i')
+            self.pz_algo.ref_band = self.pz_algo.mag_template.format(band="i")
             self.pz_algo.bands = self.pz_algo.get_mag_name_list()
             self.pz_algo.err_bands = self.pz_algo.get_mag_err_name_list()
             self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
@@ -96,7 +93,6 @@ if has_bpz:
             ]
             self.pz_algo.zp_errors = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
             self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
-
 
     class EstimatePZBPZTask(EstimatePZTask):
         """Task that runs RAIL BPZ algorithm for p(z) estimation"""

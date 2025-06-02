@@ -22,8 +22,8 @@
 __all__ = [
     "EstimatePZKNNAlgoConfig",
     "EstimatePZKNNAlgoTask",
-    "EstimatePZKNNTask",
     "EstimatePZKNNConfig",
+    "EstimatePZKNNTask",
 ]
 
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
@@ -56,7 +56,7 @@ EstimatePZKNNAlgoConfig._make_fields()
 class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
     """SubTask that runs RAIL KNN algorithm for p(z) estimation
 
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
+    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py
     for algorithm implementation.
 
     """
@@ -76,7 +76,7 @@ class EstimatePZKNNConfig(EstimatePZTaskConfig):
         self.pz_algo.stage_name = "knn"
         self.pz_algo.output_mode = "return"
         self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band='i')
+        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band="i")
         self.pz_algo.bands = self.pz_algo.get_mag_name_list()
         self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
         self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()

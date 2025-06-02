@@ -29,9 +29,10 @@ __all__ = ("ModelFormatter",)
 
 from typing import Any
 
+from rail.core.model import Model as RailModel
+
 from lsst.daf.butler import FormatterV2
 from lsst.resources import ResourcePath
-from rail.core.model import Model as RailModel
 
 
 class ModelFormatter(FormatterV2):
@@ -50,13 +51,9 @@ class ModelFormatter(FormatterV2):
         if format == "pickle":
             return ".pickle"
         # Other supported formats can be added here
-        raise RuntimeError(
-            f"Requested file format '{format}' is not supported for PZModel"
-        )
+        raise RuntimeError(f"Requested file format '{format}' is not supported for PZModel")
 
-    def read_from_local_file(
-        self, path: str, component: str | None = None, expected_size: int = -1
-    ) -> Any:
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         return RailModel.read(path)  # type: ignore
 
     def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:

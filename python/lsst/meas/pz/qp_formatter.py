@@ -30,6 +30,7 @@ __all__ = ("QPFormatter",)
 from typing import Any
 
 import qp
+
 from lsst.daf.butler import FormatterV2
 from lsst.resources import ResourcePath
 
@@ -52,13 +53,9 @@ class QPFormatter(FormatterV2):
         if format == "fits":
             return ".fits"
         # Other supported formats can be added here
-        raise RuntimeError(
-            f"Requested file format '{format}' is not supported for Table"
-        )
+        raise RuntimeError(f"Requested file format '{format}' is not supported for Table")
 
-    def read_from_local_file(
-        self, path: str, component: str | None = None, expected_size: int = -1
-    ) -> Any:
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         return qp.read(path)  # type: ignore
 
     def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:

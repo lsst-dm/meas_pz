@@ -22,8 +22,8 @@
 __all__ = [
     "EstimatePZTrainZAlgoConfig",
     "EstimatePZTrainZAlgoTask",
-    "EstimatePZTrainZTask",
     "EstimatePZTrainZConfig",
+    "EstimatePZTrainZTask",
 ]
 
 import numpy as np
@@ -58,7 +58,7 @@ EstimatePZTrainZAlgoConfig._make_fields()
 class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
     """SubTask that runs RAIL TrainZ algorithm for p(z) estimation
 
-    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py  # noqa
+    See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py
     for algorithm implementation.
 
     TrainZ is just a placeholder algorithm that assigns that same
@@ -73,7 +73,6 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
         fluxes: Table,
         mag_offset: float,
     ) -> dict[str, np.ndarray]:
-
         flux_names = self._get_flux_names()
         mag_names = self._get_mag_names()
 
