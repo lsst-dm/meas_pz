@@ -282,7 +282,7 @@ class EstimatePZAlgoTask(Task, ABC):
             Input flux errors (units?)
 
         mag_conv : float
-            Magntidue to flux conversion (typically np.log(10)*0.4)
+            Magnitude to flux conversion (typically np.log(10)*0.4)
 
         nondetect_val : float
             Value to set for non-detections
