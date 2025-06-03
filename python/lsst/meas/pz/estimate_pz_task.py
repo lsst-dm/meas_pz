@@ -381,7 +381,7 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_names = self._get_mag_names()
         flux_err_names = self._get_flux_err_names()
         mag_err_names = self._get_mag_err_names()
-        nondetect_val = self.config.nondetect_val if hasattr(self.config, "nondetect_val") else np.nan
+        nondetect_val = getattr(self.config, "nondetect_val", np.nan)
         # output dict
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
