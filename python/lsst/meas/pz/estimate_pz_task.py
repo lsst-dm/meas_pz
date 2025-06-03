@@ -256,12 +256,10 @@ class EstimatePZAlgoTask(Task, ABC):
         mags : np.array
             Magnitude values
         """
-        vals = np.where(
-            np.isfinite(flux_vals),
-            -2.5 * np.log10(flux_vals) + mag_offset,
-            nondetect_val,
-        )
-        vals = np.squeeze(vals)
+        vals = np.empty_like(flux_vals)
+        positive = flux_vals >= 0
+        vals[positive] = -2.5 * np.log10(flux_vals[positive]) + mag_offset
+        vals[~positive] = nondetect_val
         return vals
 
     @staticmethod
@@ -292,8 +290,11 @@ class EstimatePZAlgoTask(Task, ABC):
         mags_errs : np.array
             Magnitude errors
         """
-        vals = flux_err_vals / (flux_vals * mag_conv)
-        return np.squeeze(np.where(np.isfinite(vals), vals, nondetect_val))
+        vals = np.empty_like(flux_vals)
+        positive = flux_vals >= 0
+        vals[positive] = flux_err_vals[positive] / (flux_vals[positive] * mag_conv)
+        vals[~positive] = nondetect_val
+        return vals
 
     @staticmethod
     def _deredden_mags(
