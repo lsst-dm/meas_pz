@@ -38,11 +38,10 @@ from .estimate_pz_task import (
 
 
 class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNAlgoTask
+    """Config for EstimatePZKNNAlgoTask.
 
     This will select and configure the KNearNeighEstimator p(z)
-    estimation algorithm
-
+    estimation algorithm.
     """
 
     @classmethod
@@ -54,11 +53,10 @@ EstimatePZKNNAlgoConfig._make_fields()
 
 
 class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL KNN algorithm for p(z) estimation
+    """Subtask to run RAIL KNN algorithm for p(z) estimation.
 
     See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py
     for algorithm implementation.
-
     """
 
     ConfigClass = EstimatePZKNNAlgoConfig
@@ -66,10 +64,7 @@ class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
 
 
 class EstimatePZKNNConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZKNNTask
-
-    Overrides setDefaults to use KNN algorithm
-    """
+    """Config for EstimatePZKNNTask."""
 
     def setDefaults(self) -> None:
         self.pz_algo.retarget(EstimatePZKNNAlgoTask)
@@ -83,7 +78,7 @@ class EstimatePZKNNConfig(EstimatePZTaskConfig):
 
 
 class EstimatePZKNNTask(EstimatePZTask):
-    """Task that runs RAIL KNN algorithm for p(z) estimation"""
+    """Task that runs RAIL KNN algorithm for p(z) estimation."""
 
     ConfigClass = EstimatePZKNNConfig
     _DefaultName = "estimatePZKNN"

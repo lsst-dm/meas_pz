@@ -44,12 +44,7 @@ if has_bpz:
     )
 
     class EstimatePZBPZAlgoConfig(EstimatePZAlgoConfigBase):
-        """Config for EstimatePZBPZAlgoTask
-
-        This will select and configure the KNearNeighEstimator p(z)
-        estimation algorithm
-
-        """
+        """Config for EstimatePZBPZAlgoTask."""
 
         @classmethod
         def estimator_class(cls) -> type[CatEstimator]:
@@ -58,7 +53,7 @@ if has_bpz:
     EstimatePZBPZAlgoConfig._make_fields()
 
     class EstimatePZBPZAlgoTask(EstimatePZAlgoTask):
-        """SubTask that runs RAIL BPZ algorithm for p(z) estimation
+        """Subtask to run RAIL BPZ algorithm for p(z) estimation.
 
         See https://github.com/LSSTDESC/rail_bpz/blob/main/src/rail/estimation/algos/bpz_lite.py
         for algorithm implementation.
@@ -69,10 +64,7 @@ if has_bpz:
         _DefaultName = "estimatePZBPZAlgo"
 
     class EstimatePZBPZConfig(EstimatePZTaskConfig):
-        """Config for EstimatePZBPZTask
-
-        Overrides setDefaults to use BPZ algorithm
-        """
+        """Config for EstimatePZBPZTask."""
 
         def setDefaults(self) -> None:
             self.pz_algo.retarget(EstimatePZBPZAlgoTask)
@@ -95,7 +87,7 @@ if has_bpz:
             self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
 
     class EstimatePZBPZTask(EstimatePZTask):
-        """Task that runs RAIL BPZ algorithm for p(z) estimation"""
+        """Task to run RAIL BPZ algorithm for p(z) estimation."""
 
         ConfigClass = EstimatePZBPZConfig
         _DefaultName = "estimatePZBPZ"

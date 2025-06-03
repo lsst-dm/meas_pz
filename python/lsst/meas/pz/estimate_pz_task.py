@@ -49,7 +49,7 @@ from lsst.pipe.base import (
 
 
 class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "tract", "patch")):
-    """Connections for tasks that make p(z) estimates
+    """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
     an objectTable as input, and create a p(z) file in 'qp' format.
@@ -90,7 +90,7 @@ class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "
 class EstimatePZAlgoConfigBase(
     pexConfig.Config,
 ):
-    """Base class for configurations of algorithm specific p(z)
+    """Base class for configurations of algorithm-specific p(z)
     estimation tasks.
 
     This class mostly just translates the RAIL configuration
@@ -124,22 +124,22 @@ class EstimatePZAlgoConfigBase(
     )
 
     def get_band_a_env_dict(self):
-        """Return the set of a_envs to use"""
+        """Return the set of a_envs to use."""
         return {band_: self.default_a_env_values[band_] for band_ in self.bands_to_convert}
 
     def get_mag_lim_dict(self):
-        """Return the set of maglims to use"""
+        """Return the set of maglims to use."""
         return {
             self.mag_template.format(band=band_): self.default_mag_limit_values[band_]
             for band_ in self.bands_to_convert
         }
 
     def get_mag_name_list(self):
-        """Return the set of band names"""
+        """Return the set of band names."""
         return [self.mag_template.format(band=band_) for band_ in self.bands_to_convert]
 
     def get_mag_err_name_list(self):
-        """Return the set of band names"""
+        """Return the set of band names."""
         return [self.mag_err_template.format(band=band_) for band_ in self.bands_to_convert]
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
@@ -214,11 +214,15 @@ class EstimatePZAlgoConfigBase(
 
 
 class EstimatePZAlgoTask(Task, ABC):
-    """Task for algorithm specific p(z) estimation
+    """Task for algorithm-specific p(z) estimation.
 
-    This will provide almost all of the functionality
-    needed to run RAIL p(z) algorithms
+    This provides almost all of the functionality
+    needed to run RAIL p(z) algorithms.
 
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to super().__init__.
     """
 
     ConfigClass = EstimatePZAlgoConfigBase
@@ -234,7 +238,7 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_offset: float,
         nondetect_val: float,
     ) -> np.ndarray:
-        """Convert flux to magnitude
+        """Convert flux to magnitude.
 
         Parameters
         ----------
@@ -267,7 +271,7 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_conv: float,
         nondetect_val: float,
     ) -> np.ndarray:
-        """Config flux error to magnitude error
+        """Config flux error to magnitude error.
 
         Parameters
         ----------
@@ -332,24 +336,24 @@ class EstimatePZAlgoTask(Task, ABC):
         return data
 
     def _get_flux_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux column name"""
+        """Return a dict mapping band to flux column name."""
         return {
             band: self.config.flux_column_template.format(band=band) for band in self.config.bands_to_convert
         }
 
     def _get_flux_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux error column name"""
+        """Return a dict mapping band to flux error column name."""
         return {
             band: self.config.flux_err_column_template.format(band=band)
             for band in self.config.bands_to_convert
         }
 
     def _get_mag_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag column name"""
+        """Return a dict mapping band to mag column name."""
         return {band: self.config.mag_template.format(band=band) for band in self.config.bands_to_convert}
 
     def _get_mag_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag error column name"""
+        """Return a dict mapping band to mag error column name."""
         return {band: self.config.mag_err_template.format(band=band) for band in self.config.bands_to_convert}
 
     def _get_mags_and_errs(
@@ -357,7 +361,7 @@ class EstimatePZAlgoTask(Task, ABC):
         fluxes: Table,
         mag_offset: float,
     ) -> dict[str, np.ndarray]:
-        """Fill and return a numpy dict with mags and mag errors
+        """Fill and return a numpy dict with mags and mag errors.
 
         Parameters
         ----------
@@ -404,14 +408,12 @@ class EstimatePZAlgoTask(Task, ABC):
         self,
         pzModel: Model,
     ) -> None:
-        """Initialize the Task by setting up the RAIL stage
-        that will do the actually computations
+        """Set up the RAIL stage to compute photo-zs.
 
         Parameters
         ----------
-        pzModel: dict[str, Any]
-            Model used by the p(z) estimation algorithm
-
+        pzModel : Model
+            Model used by the p(z) estimation algorithm.
         """
         # pop the pipeline task config options
         # so that we can pass the rest to RAIL
@@ -433,7 +435,7 @@ class EstimatePZAlgoTask(Task, ABC):
     def col_names(
         self,
     ) -> list[str]:
-        """Get the list of column names to read from the input data"""
+        """Get the list of column names to read from the input data."""
         the_col_names = list(self._get_flux_names().values()) + list(self._get_flux_err_names().values())
         if self.config.deredden:
             the_col_names += ["ebv"]
@@ -444,17 +446,17 @@ class EstimatePZAlgoTask(Task, ABC):
         self,
         fluxes: Table,
     ) -> Struct:
-        """Run a p(z) estimation algorithm
+        """Run a p(z) estimation algorithm.
 
         Parameters
         ----------
-        fluxes: Table
-            Fluxes used to compute the redshifts
+        fluxes : Table
+            Fluxes used to compute the redshifts.
 
         Returns
         -------
-        pz_pdfs: qp.Ensemble
-            Object with the p(z) pdfs
+        pz_pdfs : qp.Ensemble
+            Object with the p(z) PDFs.
         """
         n_obj = len(fluxes)
         # Convert fluxes to mags
@@ -478,11 +480,7 @@ class EstimatePZAlgoTask(Task, ABC):
 
 
 class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
-    """Configuration for EstimatePZTask Pipeline task
-
-    This just allows picking and configuring of the available algorithms
-
-    """
+    """Configuration for EstimatePZTask PipelineTask."""
 
     pz_algo = pexConfig.ConfigurableField(
         target=EstimatePZAlgoTask,
@@ -491,17 +489,20 @@ class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZCon
 
 
 class EstimatePZTask(PipelineTask):
-    """PipelineTask for p(z) estimation
+    """PipelineTask for p(z) estimation.
 
-    This just makes the proper algorithm specfic Task and
-    passes the input data to it.
-
+    Parameters
+    ----------
+    initInputs
+        Initialization inputs to pass to super().__init__.
+    **kwargs
+        Additional keyword arguments to pass to super().__init__.
     """
 
     ConfigClass = EstimatePZTaskConfig
     _DefaultName = "estimatePZ"
 
-    def __init__(self, initInputs, **kwargs):
+    def __init__(self, initInputs: dict, **kwargs):
         super().__init__(initInputs=initInputs, **kwargs)
         self._initialized = False
         self.makeSubtask("pz_algo")

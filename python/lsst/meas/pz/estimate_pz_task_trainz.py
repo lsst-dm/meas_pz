@@ -40,12 +40,7 @@ from .estimate_pz_task import (
 
 
 class EstimatePZTrainZAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZTrainZAlgoTask
-
-    This will select and configure the TrainZEsimator p(z)
-    estimation algorithm
-
-    """
+    """Config for EstimatePZTrainZAlgoTask."""
 
     @classmethod
     def estimator_class(cls) -> type[CatEstimator]:
@@ -56,7 +51,7 @@ EstimatePZTrainZAlgoConfig._make_fields()
 
 
 class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL TrainZ algorithm for p(z) estimation
+    """Subtask to run RAIL TrainZ algorithm for p(z) estimation.
 
     See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py
     for algorithm implementation.
@@ -89,10 +84,7 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
 
 
 class EstimatePZTrainZConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZTrainZTask
-
-    Overrides setDefaults to use TrainZ algorithm
-    """
+    """Config for EstimatePZTrainZTask."""
 
     def setDefaults(self) -> None:
         self.pz_algo.retarget(EstimatePZTrainZAlgoTask)
@@ -102,7 +94,7 @@ class EstimatePZTrainZConfig(EstimatePZTaskConfig):
 
 
 class EstimatePZTrainZTask(EstimatePZTask):
-    """Task that runs RAIL TrainZ algorithm for p(z) estimation"""
+    """Task to run RAIL TrainZ algorithm for p(z) estimation."""
 
     ConfigClass = EstimatePZTrainZConfig
     _DefaultName = "estimatePZTrainZ"
