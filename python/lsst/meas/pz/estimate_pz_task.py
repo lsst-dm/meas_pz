@@ -267,7 +267,7 @@ class EstimatePZAlgoTask(Task, ABC):
         flux_vals: np.ndarray,
         flux_err_vals: np.ndarray,
         mag_conv: float,
-        nondetect_val: float,
+        nondetect_val: float = np.nan,
     ) -> np.ndarray:
         """Config flux error to magnitude error.
 
