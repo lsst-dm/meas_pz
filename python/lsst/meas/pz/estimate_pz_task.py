@@ -105,6 +105,8 @@ class EstimatePZAlgoConfigBase(
     def estimator_class(cls) -> type[CatEstimator]:
         raise NotImplementedError()
 
+    # Extinction coefficients; see https://ui.adsabs.harvard.edu/abs/1989ApJ...345..245C/abstract
+    # Also in rail.utils.catalog_utils.RubinCatalogConfig.a_env
     default_a_env_values = dict(
         u=4.81,
         g=3.64,
