@@ -200,21 +200,37 @@ class EstimatePZAlgoConfigBase(
 
     @classmethod
     def _make_fields(cls) -> None:
-        """Import the RAIL estimation stage
-        and loop through the stage config parameters and make corresponding
-        pex.config parameters.
+        """Import the RAIL estimation stage.
+
+        This method loops through the stage config parameters and converts
+        RAIL/Ceci parameters to corresponding pex.config parameters.
+
+        It should be called exactly once, immediately after the definition
+        of every subclass of this base class.
         """
+        if hasattr(cls, "__fields_made__"):
+            if cls.__fields_made__ is not True:
+                raise RuntimeError(f"{cls.__fields_made__=} exists but is not True")
+            raise RuntimeError(f"{cls=} called _make_fields twice")
         stage_class = cls.estimator_class()
         for key, val in stage_class.config_options.items():
             if isinstance(val, CeciStageConfig):
                 val = val.get(key)
             if isinstance(val, CeciParam):
                 if val.dtype in [int, float, str]:
-                    setattr(
-                        cls,
-                        key,
-                        pexConfig.Field(doc=val.msg, dtype=val.dtype, default=val.default),
-                    )
+                    if (attr := getattr(cls, key, None)) is not None:
+                        if not isinstance(attr, pexConfig.Field):
+                            raise RuntimeError(f"{cls=} {key=} exists but is of {type(key)=}, not Field")
+                        elif attr.dtype != val.dtype:
+                            raise RuntimeError(f"{cls=} {key=} exists but {attr.dtype=} != {val.dtype=}")
+                        attr.default = val.default
+                        attr.doc = f"{val.msg} (overriding base doc='{attr.doc}')"
+                    else:
+                        setattr(
+                            cls,
+                            key,
+                            pexConfig.Field(doc=val.msg, dtype=val.dtype, default=val.default),
+                        )
                 elif val.dtype in [list]:
                     # this is a hack, but it works.
                     if val.default:
@@ -232,6 +248,7 @@ class EstimatePZAlgoConfigBase(
                         key,
                         pexConfig.DictField(doc=val.msg, keytype=str, default=val.default),
                     )
+        cls.__fields_made__ = True
 
 
 class EstimatePZAlgoTask(Task, ABC):
