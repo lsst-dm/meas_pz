@@ -189,6 +189,10 @@ class EstimatePZAlgoConfigBase(
         default="{band}_gaap1p0MagErr",
         # default="{band}_cModelMagErr",
     )
+    nondetect_val = pexConfig.Field[float](
+        doc="Magnitude to set for non-detections",
+        default=np.nan,
+    )
     band_a_env = pexConfig.DictField[str, float](
         doc="Reddening parameters",
         default=default_a_env_values,
@@ -399,7 +403,7 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_names = self._get_mag_names()
         flux_err_names = self._get_flux_err_names()
         mag_err_names = self._get_mag_err_names()
-        nondetect_val = getattr(self.config, "nondetect_val", np.nan)
+        nondetect_val = self.config.nondetect_val
         # output dict
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
