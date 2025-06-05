@@ -116,13 +116,28 @@ class EstimatePZAlgoConfigBase(
         y=1.31,
     )
 
-    default_mag_limit_values = dict(
-        u=29.04,
+    # These appear in many DESC repos, for example:
+    # https://github.com/LSSTDESC/TXPipe/blob/00ebe7476fd5d9529f5bbc4d73fcef0629d134c7/examples/dp0.2/config.yml#L47
+    # They seem to be 10y WFD limits. Origin unclear.
+    default_mag_limit_10y_values = dict(
+        u=27.79,
         g=29.04,
         r=29.06,
         i=28.62,
         z=27.98,
         y=27.05,
+    )
+
+    # These appear to be from Roman-Rubin simulations:
+    # https://github.com/LSSTDESC/rail_base/blob/v1.2.1/src/rail/utils/catalog_utils.py#L207
+    # Presumably max 5y depth, and more useful for now
+    default_mag_limit_values = dict(
+        u=24.0,
+        g=27.66,
+        r=27.25,
+        i=26.6,
+        z=26.24,
+        y=25.35,
     )
 
     def get_band_a_env_dict(self):
