@@ -22,29 +22,26 @@
 __all__ = [
     "EstimatePZKNNAlgoConfig",
     "EstimatePZKNNAlgoTask",
-    "EstimatePZKNNTask",
     "EstimatePZKNNConfig",
+    "EstimatePZKNNTask",
 ]
 
-from rail.estimation.estimator import CatEstimator
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
+from rail.estimation.estimator import CatEstimator
 
 from .estimate_pz_task import (
     EstimatePZAlgoConfigBase,
     EstimatePZAlgoTask,
-    EstimatePZTaskConfig,
     EstimatePZTask,
+    EstimatePZTaskConfig,
 )
 
 
 class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZAlgoKNNTask
+    """Config for EstimatePZKNNAlgoTask.
 
     This will select and configure the KNearNeighEstimator p(z)
-    estimation algorithm
-
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
-    for parameters and default values.
+    estimation algorithm.
     """
 
     @classmethod
@@ -56,14 +53,10 @@ EstimatePZKNNAlgoConfig._make_fields()
 
 
 class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
-    """SubTask that runs RAIL KNN algorithm for p(z) estimation
+    """Subtask to run RAIL KNN algorithm for p(z) estimation.
 
-    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py  # noqa
+    See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py
     for algorithm implementation.
-
-    KNN estimates the p(z) distribution by taking
-    a weighted mixture of the nearest neigheboors in
-    color space.
     """
 
     ConfigClass = EstimatePZKNNAlgoConfig
@@ -71,28 +64,21 @@ class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
 
 
 class EstimatePZKNNConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZKNNTask
+    """Config for EstimatePZKNNTask."""
 
-    Overrides setDefaults to use KNN algorithm
-    """
-
-    def setDefaults(self):
+    def setDefaults(self) -> None:
         self.pz_algo.retarget(EstimatePZKNNAlgoTask)
         self.pz_algo.stage_name = "knn"
         self.pz_algo.output_mode = "return"
-        self.pz_algo.bands = [
-            "mag_g_lsst",
-            "mag_r_lsst",
-            "mag_i_lsst",
-            "mag_z_lsst",
-            "mag_y_lsst",
-        ]
-        self.pz_algo.ref_band = "mag_i_lsst"
-        self.pz_algo.band_a_env = dict(g=3.64, r=2.70, i=2.06, z=1.58, y=1.31)
+        self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
+        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band="i")
+        self.pz_algo.bands = self.pz_algo.get_mag_name_list()
+        self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
+        self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
 
 
 class EstimatePZKNNTask(EstimatePZTask):
-    """Task that runs RAIL KNN algorithm for p(z) estimation"""
+    """Task that runs RAIL KNN algorithm for p(z) estimation."""
 
     ConfigClass = EstimatePZKNNConfig
     _DefaultName = "estimatePZKNN"

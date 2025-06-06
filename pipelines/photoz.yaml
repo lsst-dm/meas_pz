@@ -1,0 +1,27 @@
+description: |
+  Estimate photometric redshifts
+tasks:
+  # TODO: enable after rail-bpz RFC
+  # pz_bpz:
+  #  class: lsst.meas.pz.estimate_pz_task_bpz.EstimatePZBPZTask
+  #  config:
+  #    connections.pzModel: 'pzModel_bpz'
+  #    connections.pzEnsemble: 'pz_estimate_bpz'
+  pz_knn:
+    class: lsst.meas.pz.estimate_pz_task_knn.EstimatePZKNNTask
+    config:
+      connections.pzModel: 'pzModel_knn'
+      connections.pzEnsemble: 'pz_estimate_knn'
+  pz_trainz:
+    class: lsst.meas.pz.estimate_pz_task_trainz.EstimatePZTrainZTask
+    config:
+      connections.pzModel: 'pzModel_trainz'
+      connections.pzEnsemble: 'pz_estimate_trainz'
+subsets:
+  all_pz:
+    subset:
+      # - pz_bpz  # TODO: enable after rail-bpz RFC
+      - pz_knn
+      - pz_trainz
+    description: |
+      All of the photo-z algorithms
