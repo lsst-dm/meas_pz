@@ -422,8 +422,8 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
         for band in flux_names.keys():
-            fluxVals = fluxes[flux_names[band]]
-            fluxErrVals = fluxes[flux_err_names[band]]
+            fluxVals = np.asarray(fluxes[flux_names[band]])
+            fluxErrVals = np.asarray(fluxes[flux_err_names[band]])
             mag_dict[mag_names[band]] = self._flux_to_mag(
                 fluxVals,
                 mag_offset,
