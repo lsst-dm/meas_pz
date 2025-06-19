@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 __all__ = [
     "EstimatePZAlgoConfigBase",
     "EstimatePZAlgoTask",
@@ -27,6 +29,7 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
+import dataclasses
 from typing import Any
 
 import numpy as np
@@ -48,7 +51,7 @@ from lsst.pipe.base import (
 )
 
 
-class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "tract", "patch")):
+class EstimatePZConnections(PipelineTaskConnections, dimensions=[]):
     """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
@@ -64,27 +67,21 @@ class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "
     )
 
     objectTable = cT.Input(
-        doc="Object table in parquet format, per patch",
-        name="objectTable",
+        doc="Object table in parquet format",
+        name="object",
         storageClass="ArrowAstropy",
-        dimensions=(
-            "skymap",
-            "tract",
-            "patch",
-        ),
+        dimensions=[],
         deferLoad=True,
     )
 
     pzEnsemble = cT.Output(
-        doc="Per-object p(z) estimates, per patch",
-        name="pzEnsemble",
-        storageClass="QPEnsemble",
-        dimensions=(
-            "skymap",
-            "tract",
-            "patch",
-        ),
+        doc="Per-object p(z) estimates", name="pzEnsemble", storageClass="QPEnsemble", dimensions=[]
     )
+
+    def __init__(self, *, config: EstimatePZTaskConfig = None):
+        self.dimensions = set(config.dimensions)
+        self.objectTable = dataclasses.replace(self.objectTable, dimensions=set(config.dimensions))
+        self.pzEnsemble = dataclasses.replace(self.pzEnsemble, dimensions=set(config.dimensions))
 
 
 class EstimatePZAlgoConfigBase(
@@ -158,6 +155,12 @@ class EstimatePZAlgoConfigBase(
     def get_mag_err_name_list(self):
         """Return the set of band names."""
         return [self.mag_err_template.format(band=band_) for band_ in self.bands_to_convert]
+
+    dimensions = pexConfig.ListField[str](
+        "Dimensions of this task and its inputs and outputs.",
+        dtype=str,
+        default=["instrument", "skymap", "tract", "patch"],
+    )
 
     stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
     mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
@@ -520,6 +523,12 @@ class EstimatePZAlgoTask(Task, ABC):
 
 class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
     """Configuration for EstimatePZTask PipelineTask."""
+
+    dimensions = pexConfig.ListField[str](
+        "Dimensions of this task and its inputs and outputs.",
+        dtype=str,
+        default=["skymap", "tract", "patch"],
+    )
 
     pz_algo = pexConfig.ConfigurableField(
         target=EstimatePZAlgoTask,
