@@ -200,6 +200,14 @@ class EstimatePZAlgoConfigBase(
         doc="Reddening parameters",
         default=default_a_env_values,
     )
+    id_col = pexConfig.Field[str](
+        doc="Name of column with object id",
+        default="objectId",
+    )
+    calc_summary_stats = pexConfig.Field[bool](
+        doc="Calculate summary statistics",
+        default=True,
+    )
 
     @classmethod
     def _make_fields(cls) -> None:
