@@ -220,7 +220,7 @@ class EstimatePZAlgoConfigBase(
             if isinstance(val, CeciStageConfig):
                 val = val.get(key)
             if isinstance(val, CeciParam):
-                if val.dtype in [int, float, str]:
+                if val.dtype in [bool, int, float, str]:
                     if (attr := getattr(cls, key, None)) is not None:
                         if not isinstance(attr, pexConfig.Field):
                             raise RuntimeError(f"{cls=} {key=} exists but is of {type(key)=}, not Field")
