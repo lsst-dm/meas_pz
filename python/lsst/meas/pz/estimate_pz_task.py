@@ -489,6 +489,8 @@ class EstimatePZAlgoTask(Task, ABC):
         the_col_names = list(self._get_flux_names().values()) + list(self._get_flux_err_names().values())
         if self.config.deredden:
             the_col_names += ["ebv"]
+        if self.config.id_col:
+            the_col_names += [self.config.id_col]
 
         return the_col_names
 
@@ -522,6 +524,9 @@ class EstimatePZAlgoTask(Task, ABC):
                 self._get_mag_names(),
                 nondetect_val,
             )
+
+        if self.config.id_col:
+            mags[self.config.id_col] = fluxes[self.config.id_col]
 
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object

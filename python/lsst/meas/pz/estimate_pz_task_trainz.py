@@ -91,8 +91,6 @@ class EstimatePZTrainZConfig(EstimatePZTaskConfig):
         self.pz_algo.stage_name = "trainz"
         self.pz_algo.output_mode = "return"
         self.pz_algo.band_a_env = dict(i=2.06)
-        self.pz_algo.id_col = "objectId"
-        self.pz_algo.calc_summary_stats = True
 
 
 class EstimatePZTrainZTask(EstimatePZTask):
