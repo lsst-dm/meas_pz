@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 __all__ = [
     "EstimatePZAlgoConfigBase",
     "EstimatePZAlgoTask",
@@ -26,6 +28,7 @@ __all__ = [
     "EstimatePZTaskConfig",
 ]
 
+import dataclasses
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -48,7 +51,7 @@ from lsst.pipe.base import (
 )
 
 
-class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "tract", "patch")):
+class EstimatePZConnections(PipelineTaskConnections, dimensions=[]):
     """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
@@ -64,27 +67,21 @@ class EstimatePZConnections(PipelineTaskConnections, dimensions=("instrument", "
     )
 
     objectTable = cT.Input(
-        doc="Object table in parquet format, per patch",
-        name="objectTable",
+        doc="Object table",
+        name="object",
         storageClass="ArrowAstropy",
-        dimensions=(
-            "skymap",
-            "tract",
-            "patch",
-        ),
+        dimensions=[],
         deferLoad=True,
     )
 
     pzEnsemble = cT.Output(
-        doc="Per-object p(z) estimates, per patch",
-        name="pzEnsemble",
-        storageClass="QPEnsemble",
-        dimensions=(
-            "skymap",
-            "tract",
-            "patch",
-        ),
+        doc="Per-object p(z) estimates", name="pzEnsemble", storageClass="QPEnsemble", dimensions=[]
     )
+
+    def __init__(self, *, config: EstimatePZTaskConfig = None):
+        self.dimensions = set(config.dimensions)
+        self.objectTable = dataclasses.replace(self.objectTable, dimensions=set(config.dimensions))
+        self.pzEnsemble = dataclasses.replace(self.pzEnsemble, dimensions=set(config.dimensions))
 
 
 class EstimatePZAlgoConfigBase(
@@ -217,7 +214,7 @@ class EstimatePZAlgoConfigBase(
             if isinstance(val, CeciStageConfig):
                 val = val.get(key)
             if isinstance(val, CeciParam):
-                if val.dtype in [int, float, str]:
+                if val.dtype in [bool, int, float, str]:
                     if (attr := getattr(cls, key, None)) is not None:
                         if not isinstance(attr, pexConfig.Field):
                             raise RuntimeError(f"{cls=} {key=} exists but is of {type(key)=}, not Field")
@@ -425,8 +422,8 @@ class EstimatePZAlgoTask(Task, ABC):
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
         for band in flux_names.keys():
-            fluxVals = fluxes[flux_names[band]]
-            fluxErrVals = fluxes[flux_err_names[band]]
+            fluxVals = np.asarray(fluxes[flux_names[band]])
+            fluxErrVals = np.asarray(fluxes[flux_err_names[band]])
             mag_dict[mag_names[band]] = self._flux_to_mag(
                 fluxVals,
                 mag_offset,
@@ -504,7 +501,8 @@ class EstimatePZAlgoTask(Task, ABC):
 
         # De-redden
         if self.config.deredden:
-            mags["ebv"] = fluxes["ebv"]
+            # asarray will convert an astropy column to an array w/o units
+            mags["ebv"] = np.asarray(fluxes["ebv"])
             mags = self._deredden_mags(
                 mags,
                 self.config.band_a_env,
@@ -520,6 +518,12 @@ class EstimatePZAlgoTask(Task, ABC):
 
 class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
     """Configuration for EstimatePZTask PipelineTask."""
+
+    dimensions = pexConfig.ListField[str](
+        "Dimensions of this task and its inputs and outputs.",
+        dtype=str,
+        default=["skymap", "tract"],
+    )
 
     pz_algo = pexConfig.ConfigurableField(
         target=EstimatePZAlgoTask,

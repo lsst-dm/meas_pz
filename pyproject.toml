@@ -63,7 +63,7 @@ line_length = 110
 known_first_party = ["lsst"]
 
 [tool.lsst_versions]
-write_to = "python/lsst/meas/pz/version.py"
+write_to = "python/lsst/meas/pz/base/version.py"
 
 [tool.pytest.ini_options]
 # These require additional environment setup that isn't available during
