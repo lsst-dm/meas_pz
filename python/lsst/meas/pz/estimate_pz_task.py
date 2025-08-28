@@ -501,7 +501,8 @@ class EstimatePZAlgoTask(Task, ABC):
 
         # De-redden
         if self.config.deredden:
-            mags["ebv"] = fluxes["ebv"]
+            # asarray will convert an astropy column to an array w/o units
+            mags["ebv"] = np.asarray(fluxes["ebv"])
             mags = self._deredden_mags(
                 mags,
                 self.config.band_a_env,
