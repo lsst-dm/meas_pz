@@ -522,7 +522,7 @@ class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZCon
     dimensions = pexConfig.ListField[str](
         "Dimensions of this task and its inputs and outputs.",
         dtype=str,
-        default=["skymap", "tract", "patch"],
+        default=["skymap", "tract"],
     )
 
     pz_algo = pexConfig.ConfigurableField(

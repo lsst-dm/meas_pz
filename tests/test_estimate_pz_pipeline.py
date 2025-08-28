@@ -72,7 +72,7 @@ class MeasPzPipelineTestCase(unittest.TestCase):
             os.path.join(PIPELINES_DIR, "photoz.yaml"),
             ["#all_pz"],
             [
-                ("object", {"skymap", "tract", "patch"}, "ArrowAstropy", False),
+                ("object", {"skymap", "tract"}, "ArrowAstropy", False),
                 ("pzModel_trainz", {"instrument"}, "PZModel", True),
                 ("pzModel_knn", {"instrument"}, "PZModel", True),
             ],
