@@ -38,7 +38,7 @@ class MeasPzPipelineTestCase(unittest.TestCase):
     """Test the PZ pipeline plumbing for fully supported algorithms.
 
     This uses the `PipelineStepTester` to test
-    a test pipeline define in tests/data/pz_pipeline_hsc.yaml
+    a test pipeline define in tests/data/photoz_pipeline_hsc.yaml
 
     This should include any algorithms that are
     including in the rubin-env environment.
@@ -65,25 +65,25 @@ class MeasPzPipelineTestCase(unittest.TestCase):
         DatastoreMock.apply(butler)
         return butler
 
-    def test_pz_pipeline(self) -> None:
+    def test_photoz_pipeline(self) -> None:
         butler = self.makeButler(writeable=True)
 
         tester = PipelineStepTester(
             os.path.join(PIPELINES_DIR, "photoz.yaml"),
-            ["#all_pz"],
+            ["#photoz_all"],
             [
                 ("object", {"skymap", "tract"}, "ArrowAstropy", False),
-                ("pzModel_trainz", {"instrument"}, "PZModel", True),
-                ("pzModel_knn", {"instrument"}, "PZModel", True),
+                ("photozModel_trainz", {"instrument"}, "PhotozModel", True),
+                ("photozModel_knn", {"instrument"}, "PhotozModel", True),
             ],
             expected_inputs={
                 "object",
-                "pzModel_knn",
-                "pzModel_trainz",
+                "photozModel_knn",
+                "photozModel_trainz",
             },
             expected_outputs={
-                "pz_estimate_knn",
-                "pz_estimate_trainz",
+                "photoz_estimate_knn",
+                "photoz_estimate_trainz",
             },
         )
         tester.run(butler, self)

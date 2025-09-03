@@ -22,10 +22,10 @@
 from __future__ import annotations
 
 __all__ = [
-    "EstimatePZAlgoConfigBase",
-    "EstimatePZAlgoTask",
-    "EstimatePZTask",
-    "EstimatePZTaskConfig",
+    "EstimatePhotozAlgoConfigBase",
+    "EstimatePhotozAlgoTask",
+    "EstimatePhotozTask",
+    "EstimatePhotozTaskConfig",
 ]
 
 import dataclasses
@@ -51,17 +51,17 @@ from lsst.pipe.base import (
 )
 
 
-class EstimatePZConnections(PipelineTaskConnections, dimensions=[]):
+class EstimatePhotozConnections(PipelineTaskConnections, dimensions=[]):
     """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
     an objectTable as input, and create a p(z) file in 'qp' format.
     """
 
-    pzModel = cT.PrerequisiteInput(
+    photozModel = cT.PrerequisiteInput(
         doc="Model for PZ Estimation",
-        name="pzModel",
-        storageClass="PZModel",
+        name="photozModel",
+        storageClass="PhotozModel",
         dimensions=["instrument"],
         isCalibration=True,
     )
@@ -74,17 +74,17 @@ class EstimatePZConnections(PipelineTaskConnections, dimensions=[]):
         deferLoad=True,
     )
 
-    pzEnsemble = cT.Output(
-        doc="Per-object p(z) estimates", name="pzEnsemble", storageClass="QPEnsemble", dimensions=[]
+    photozEnsemble = cT.Output(
+        doc="Per-object p(z) estimates", name="photozEnsemble", storageClass="QPEnsemble", dimensions=[]
     )
 
-    def __init__(self, *, config: EstimatePZTaskConfig = None):
+    def __init__(self, *, config: EstimatePhotozTaskConfig = None):
         self.dimensions = set(config.dimensions)
         self.objectTable = dataclasses.replace(self.objectTable, dimensions=set(config.dimensions))
-        self.pzEnsemble = dataclasses.replace(self.pzEnsemble, dimensions=set(config.dimensions))
+        self.photozEnsemble = dataclasses.replace(self.photozEnsemble, dimensions=set(config.dimensions))
 
 
-class EstimatePZAlgoConfigBase(
+class EstimatePhotozAlgoConfigBase(
     pexConfig.Config,
 ):
     """Base class for configurations of algorithm-specific p(z)
@@ -248,7 +248,7 @@ class EstimatePZAlgoConfigBase(
         cls.__fields_made__ = True
 
 
-class EstimatePZAlgoTask(Task, ABC):
+class EstimatePhotozAlgoTask(Task, ABC):
     """Task for algorithm-specific p(z) estimation.
 
     This provides almost all of the functionality
@@ -260,7 +260,7 @@ class EstimatePZAlgoTask(Task, ABC):
         Additional keyword arguments to pass to super().__init__.
     """
 
-    ConfigClass = EstimatePZAlgoConfigBase
+    ConfigClass = EstimatePhotozAlgoConfigBase
 
     mag_conv = np.log(10) * 0.4
 
@@ -442,13 +442,13 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def init(
         self,
-        pzModel: Model,
+        photozModel: Model,
     ) -> None:
         """Set up the RAIL stage to compute photo-zs.
 
         Parameters
         ----------
-        pzModel : Model
+        photozModel : Model
             Model used by the p(z) estimation algorithm.
         """
         # pop the pipeline task config options
@@ -462,7 +462,7 @@ class EstimatePZAlgoTask(Task, ABC):
         self._stage = PZFactory.build_stage_instance(
             self.config.stage_name,
             self.config.estimator_class(),
-            model_path=pzModel.data,
+            model_path=photozModel.data,
             input_path="dummy.in",
             **rail_kwargs,
         )
@@ -491,7 +491,7 @@ class EstimatePZAlgoTask(Task, ABC):
 
         Returns
         -------
-        pz_pdfs : qp.Ensemble
+        photoz_pdfs : qp.Ensemble
             Object with the p(z) PDFs.
         """
         n_obj = len(fluxes)
@@ -512,12 +512,12 @@ class EstimatePZAlgoTask(Task, ABC):
 
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object
-        pz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)
-        return Struct(pzEnsemble=pz_pdfs)
+        photoz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)
+        return Struct(photozEnsemble=photoz_pdfs)
 
 
-class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
-    """Configuration for EstimatePZTask PipelineTask."""
+class EstimatePhotozTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePhotozConnections):
+    """Configuration for EstimatePhotozTask PipelineTask."""
 
     dimensions = pexConfig.ListField[str](
         "Dimensions of this task and its inputs and outputs.",
@@ -525,13 +525,13 @@ class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZCon
         default=["skymap", "tract"],
     )
 
-    pz_algo = pexConfig.ConfigurableField(
-        target=EstimatePZAlgoTask,
+    photoz_algo = pexConfig.ConfigurableField(
+        target=EstimatePhotozAlgoTask,
         doc="Algorithm specific configuration p(z) estimation task",
     )
 
 
-class EstimatePZTask(PipelineTask):
+class EstimatePhotozTask(PipelineTask):
     """PipelineTask for p(z) estimation.
 
     Parameters
@@ -542,31 +542,31 @@ class EstimatePZTask(PipelineTask):
         Additional keyword arguments to pass to super().__init__.
     """
 
-    ConfigClass = EstimatePZTaskConfig
-    _DefaultName = "estimatePZ"
+    ConfigClass = EstimatePhotozTaskConfig
+    _DefaultName = "estimatePhotoz"
 
     def __init__(self, initInputs: dict, **kwargs):
         super().__init__(initInputs=initInputs, **kwargs)
         self._initialized = False
-        self.makeSubtask("pz_algo")
+        self.makeSubtask("photoz_algo")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
         inputs["fluxes"] = inputs.pop("objectTable").get(
-            parameters=dict(columns=self.pz_algo.col_names()),
+            parameters=dict(columns=self.photoz_algo.col_names()),
         )
         outputs = self.run(**inputs, skip_init=self._initialized)
         butlerQC.put(outputs, outputRefs)
 
     def run(
         self,
-        pzModel: Model,
+        photozModel: Model,
         fluxes: Table,
         skip_init: bool = False,
     ) -> Struct:
         if not skip_init:
             self._initialized = True
-            self.pz_algo.init(pzModel)
+            self.photoz_algo.init(photozModel)
 
-        ret_struct = self.pz_algo.run(fluxes)
-        return Struct(pzEnsemble=ret_struct.pzEnsemble)
+        ret_struct = self.photoz_algo.run(fluxes)
+        return Struct(photozEnsemble=ret_struct.photozEnsemble)

@@ -20,25 +20,25 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
-    "EstimatePZKNNAlgoConfig",
-    "EstimatePZKNNAlgoTask",
-    "EstimatePZKNNConfig",
-    "EstimatePZKNNTask",
+    "EstimatePhotozKNNAlgoConfig",
+    "EstimatePhotozKNNAlgoTask",
+    "EstimatePhotozKNNConfig",
+    "EstimatePhotozKNNTask",
 ]
 
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
 from rail.estimation.estimator import CatEstimator
 
-from .estimate_pz_task import (
-    EstimatePZAlgoConfigBase,
-    EstimatePZAlgoTask,
-    EstimatePZTask,
-    EstimatePZTaskConfig,
+from .estimate_photoz_task import (
+    EstimatePhotozAlgoConfigBase,
+    EstimatePhotozAlgoTask,
+    EstimatePhotozTask,
+    EstimatePhotozTaskConfig,
 )
 
 
-class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZKNNAlgoTask.
+class EstimatePhotozKNNAlgoConfig(EstimatePhotozAlgoConfigBase):
+    """Config for EstimatePhotozKNNAlgoTask.
 
     This will select and configure the KNearNeighEstimator p(z)
     estimation algorithm.
@@ -49,36 +49,36 @@ class EstimatePZKNNAlgoConfig(EstimatePZAlgoConfigBase):
         return KNearNeighEstimator
 
 
-EstimatePZKNNAlgoConfig._make_fields()
+EstimatePhotozKNNAlgoConfig._make_fields()
 
 
-class EstimatePZKNNAlgoTask(EstimatePZAlgoTask):
+class EstimatePhotozKNNAlgoTask(EstimatePhotozAlgoTask):
     """Subtask to run RAIL KNN algorithm for p(z) estimation.
 
     See https://github.com/LSSTDESC/rail_sklearn/blob/main/src/rail/estimation/algos/k_nearneigh.py
     for algorithm implementation.
     """
 
-    ConfigClass = EstimatePZKNNAlgoConfig
-    _DefaultName = "estimatePZKNNAlgo"
+    ConfigClass = EstimatePhotozKNNAlgoConfig
+    _DefaultName = "estimatePhotozKNNAlgo"
 
 
-class EstimatePZKNNConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZKNNTask."""
+class EstimatePhotozKNNConfig(EstimatePhotozTaskConfig):
+    """Config for EstimatePhotozKNNTask."""
 
     def setDefaults(self) -> None:
-        self.pz_algo.retarget(EstimatePZKNNAlgoTask)
-        self.pz_algo.stage_name = "knn"
-        self.pz_algo.output_mode = "return"
-        self.pz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.pz_algo.ref_band = self.pz_algo.mag_template.format(band="i")
-        self.pz_algo.bands = self.pz_algo.get_mag_name_list()
-        self.pz_algo.mag_limits = self.pz_algo.get_mag_lim_dict()
-        self.pz_algo.band_a_env = self.pz_algo.get_band_a_env_dict()
+        self.photoz_algo.retarget(EstimatePhotozKNNAlgoTask)
+        self.photoz_algo.stage_name = "knn"
+        self.photoz_algo.output_mode = "return"
+        self.photoz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
+        self.photoz_algo.ref_band = self.photoz_algo.mag_template.format(band="i")
+        self.photoz_algo.bands = self.photoz_algo.get_mag_name_list()
+        self.photoz_algo.mag_limits = self.photoz_algo.get_mag_lim_dict()
+        self.photoz_algo.band_a_env = self.photoz_algo.get_band_a_env_dict()
 
 
-class EstimatePZKNNTask(EstimatePZTask):
+class EstimatePhotozKNNTask(EstimatePhotozTask):
     """Task that runs RAIL KNN algorithm for p(z) estimation."""
 
-    ConfigClass = EstimatePZKNNConfig
-    _DefaultName = "estimatePZKNN"
+    ConfigClass = EstimatePhotozKNNConfig
+    _DefaultName = "estimatePhotozKNN"

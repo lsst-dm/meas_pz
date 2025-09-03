@@ -20,10 +20,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = [
-    "EstimatePZTrainZAlgoConfig",
-    "EstimatePZTrainZAlgoTask",
-    "EstimatePZTrainZConfig",
-    "EstimatePZTrainZTask",
+    "EstimatePhotozTrainZAlgoConfig",
+    "EstimatePhotozTrainZAlgoTask",
+    "EstimatePhotozTrainZConfig",
+    "EstimatePhotozTrainZTask",
 ]
 
 import numpy as np
@@ -31,26 +31,26 @@ from astropy.table import Table
 from rail.estimation.algos.train_z import TrainZEstimator
 from rail.estimation.estimator import CatEstimator
 
-from .estimate_pz_task import (
-    EstimatePZAlgoConfigBase,
-    EstimatePZAlgoTask,
-    EstimatePZTask,
-    EstimatePZTaskConfig,
+from .estimate_photoz_task import (
+    EstimatePhotozAlgoConfigBase,
+    EstimatePhotozAlgoTask,
+    EstimatePhotozTask,
+    EstimatePhotozTaskConfig,
 )
 
 
-class EstimatePZTrainZAlgoConfig(EstimatePZAlgoConfigBase):
-    """Config for EstimatePZTrainZAlgoTask."""
+class EstimatePhotozTrainZAlgoConfig(EstimatePhotozAlgoConfigBase):
+    """Config for EstimatePhotozTrainZAlgoTask."""
 
     @classmethod
     def estimator_class(cls) -> type[CatEstimator]:
         return TrainZEstimator
 
 
-EstimatePZTrainZAlgoConfig._make_fields()
+EstimatePhotozTrainZAlgoConfig._make_fields()
 
 
-class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
+class EstimatePhotozTrainZAlgoTask(EstimatePhotozAlgoTask):
     """Subtask to run RAIL TrainZ algorithm for p(z) estimation.
 
     See https://github.com/LSSTDESC/rail_base/blob/main/src/rail/estimation/algos/train_z.py
@@ -60,8 +60,8 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
     p(z) distribution (taken from the input model file) to every object.
     """
 
-    ConfigClass = EstimatePZTrainZAlgoConfig
-    _DefaultName = "estimatePZTrainZAlgo"
+    ConfigClass = EstimatePhotozTrainZAlgoConfig
+    _DefaultName = "estimatePhotozTrainZAlgo"
 
     def _get_mags_and_errs(
         self,
@@ -83,18 +83,18 @@ class EstimatePZTrainZAlgoTask(EstimatePZAlgoTask):
         return mag_dict
 
 
-class EstimatePZTrainZConfig(EstimatePZTaskConfig):
-    """Config for EstimatePZTrainZTask."""
+class EstimatePhotozTrainZConfig(EstimatePhotozTaskConfig):
+    """Config for EstimatePhotozTrainZTask."""
 
     def setDefaults(self) -> None:
-        self.pz_algo.retarget(EstimatePZTrainZAlgoTask)
-        self.pz_algo.stage_name = "trainz"
-        self.pz_algo.output_mode = "return"
-        self.pz_algo.band_a_env = dict(i=2.06)
+        self.photoz_algo.retarget(EstimatePhotozTrainZAlgoTask)
+        self.photoz_algo.stage_name = "trainz"
+        self.photoz_algo.output_mode = "return"
+        self.photoz_algo.band_a_env = dict(i=2.06)
 
 
-class EstimatePZTrainZTask(EstimatePZTask):
+class EstimatePhotozTrainZTask(EstimatePhotozTask):
     """Task to run RAIL TrainZ algorithm for p(z) estimation."""
 
-    ConfigClass = EstimatePZTrainZConfig
-    _DefaultName = "estimatePZTrainZ"
+    ConfigClass = EstimatePhotozTrainZConfig
+    _DefaultName = "estimatePhotozTrainZ"

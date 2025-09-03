@@ -23,7 +23,7 @@
 import numpy as np
 import pytest
 
-from lsst.meas.photoz.base.estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
+from lsst.meas.photoz.base.estimate_photoz_task import EstimatePhotozAlgoConfigBase, EstimatePhotozAlgoTask
 
 
 @pytest.fixture(scope="module")
@@ -52,17 +52,17 @@ def magnitude_errors(fluxes, flux_errors):
 
 def test_flux_to_mag(fluxes, magnitudes):
     """Test flux to magnitude conversions."""
-    mags_convert = EstimatePZAlgoTask._flux_to_mag(fluxes, 31.4, np.nan)
+    mags_convert = EstimatePhotozAlgoTask._flux_to_mag(fluxes, 31.4, np.nan)
     assert np.allclose(mags_convert, magnitudes, atol=1e-10, rtol=1e-12)
 
 
 def test_flux_err_to_mag_err(fluxes, flux_errors, magnitude_errors):
     """Test flux error to magnitude error conversions."""
-    mags_convert = EstimatePZAlgoTask._flux_err_to_mag_err(fluxes, flux_errors, mag_conv=np.log(10) * 0.4)
+    mags_convert = EstimatePhotozAlgoTask._flux_err_to_mag_err(fluxes, flux_errors, mag_conv=np.log(10) * 0.4)
     assert np.allclose(mags_convert, magnitude_errors, atol=1e-10, rtol=1e-12)
 
 
 def test_algo_config():
     """Test default initialization of base config class."""
-    config = EstimatePZAlgoConfigBase(stage_name="test")
+    config = EstimatePhotozAlgoConfigBase(stage_name="test")
     config.validate()

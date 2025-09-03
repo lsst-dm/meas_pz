@@ -20,10 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from lsst.meas.photoz.base.estimate_pz_task_knn import EstimatePZKNNConfig
+from lsst.meas.photoz.base.estimate_photoz_task_trainz import EstimatePhotozTrainZConfig
 
 
 def test_algo_config():
-    """Test default initialization of KNN config class."""
-    config = EstimatePZKNNConfig()
+    """Test default initialization of TrainZ config class."""
+    config = EstimatePhotozTrainZConfig()
     config.validate()

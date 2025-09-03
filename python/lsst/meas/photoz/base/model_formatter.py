@@ -51,7 +51,7 @@ class ModelFormatter(FormatterV2):
         if format == "pickle":
             return ".pickle"
         # Other supported formats can be added here
-        raise RuntimeError(f"Requested file format '{format}' is not supported for PZModel")
+        raise RuntimeError(f"Requested file format '{format}' is not supported for PhotozModel")
 
     def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         return RailModel.read(path)  # type: ignore
