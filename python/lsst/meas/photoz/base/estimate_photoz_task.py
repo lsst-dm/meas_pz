@@ -56,6 +56,12 @@ class EstimatePhotozConnections(PipelineTaskConnections, dimensions=[]):
 
     These will take pickled model file as a "calibration-like" input,
     an objectTable as input, and create a p(z) file in 'qp' format.
+
+    Parameters
+    ----------
+    config : `EstimatePZTaskConfig`
+        A `EstimatePZTaskConfig` class instance whose class has been configured
+        to use this `PipelineTaskConnections` class.
     """
 
     photozModel = cT.PrerequisiteInput(
