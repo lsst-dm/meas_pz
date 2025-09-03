@@ -1,16 +1,16 @@
-.. py:currentmodule:: lsst.meas.pz
+.. py:currentmodule:: lsst.meas.photoz.base
 
-.. _lsst.meas.pz:
+.. _lsst.meas.photoz.base:
 
 ############
-lsst.meas.pz
+lsst.meas.photoz.base
 ############
 
 .. Paragraph that describes what this Python module does and links to related modules and frameworks.
 
-.. .. _lsst.meas.pz-using:
+.. .. _lsst.meas.photoz.base-using:
 
-.. Using lsst.meas.pz
+.. Using lsst.meas.photoz.base
 .. ==================
 
 .. toctree linking to topics related to using the module's APIs.
@@ -18,20 +18,20 @@ lsst.meas.pz
 .. .. toctree::
 ..    :maxdepth: 1
 
-.. _lsst.meas.pz-contributing:
+.. _lsst.meas.photoz.base-contributing:
 
 Contributing
 ============
 
-``lsst.meas.pz`` is developed at https://github.com/lsst-dm/meas_pz.
-You can find Jira issues for this module under the `meas_pz <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20meas_pz>`_ component.
+``lsst.meas.photoz.base`` is developed at https://github.com/lsst-dm/meas_photoz_base.
+You can find Jira issues for this module under the `meas_photoz_base <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20meas_photoz_base>`_ component.
 
 .. If there are topics related to developing this module (rather than using it), link to this from a toctree placed here.
 
 .. .. toctree::
 ..    :maxdepth: 1
 
-.. .. _lsst.meas.pz-scripts:
+.. .. _lsst.meas.photoz.base-scripts:
 
 .. Script reference
 .. ================
@@ -41,11 +41,11 @@ You can find Jira issues for this module under the `meas_pz <https://jira.lsstco
 .. .. toctree::
 ..    :maxdepth: 1
 
-.. .. _lsst.meas.pz-pyapi:
+.. .. _lsst.meas.photoz.base-pyapi:
 
 Python API reference
 ====================
 
-.. automodapi:: lsst.meas.pz
+.. automodapi:: lsst.meas.photoz.base
    :no-main-docstr:
    :no-inheritance-diagram:

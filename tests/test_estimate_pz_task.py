@@ -1,4 +1,4 @@
-# This file is part of meas_pz
+# This file is part of meas_photoz_base
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -23,7 +23,7 @@
 import numpy as np
 import pytest
 
-from lsst.meas.pz.estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
+from lsst.meas.photoz.base.estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
 
 
 @pytest.fixture(scope="module")
