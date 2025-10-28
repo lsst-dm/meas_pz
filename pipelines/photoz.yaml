@@ -1,26 +1,16 @@
 description: |
-  Estimate photometric redshifts
+  Estimate photometric redshifts with all base algorithms
 tasks:
-  # TODO: enable after rail-bpz RFC
-  # photoz_bpz:
-  #  class: lsst.meas.photoz.base.estimate_photoz_task_bpz.EstimatePhotozBPZTask
-  #  config:
-  #    connections.photozModel: 'photozModel_bpz'
-  #    connections.photozEnsemble: 'photoz_estimate_bpz'
+  photoz_bpz:
+    class: lsst.meas.photoz.base.estimate_photoz_task_bpz.EstimatePhotozBPZTask
   photoz_knn:
     class: lsst.meas.photoz.base.estimate_photoz_task_knn.EstimatePhotozKNNTask
-    config:
-      connections.photozModel: 'photozModel_knn'
-      connections.photozEnsemble: 'photoz_estimate_knn'
   photoz_trainz:
     class: lsst.meas.photoz.base.estimate_photoz_task_trainz.EstimatePhotozTrainZTask
-    config:
-      connections.photozModel: 'photozModel_trainz'
-      connections.photozEnsemble: 'photoz_estimate_trainz'
 subsets:
   photoz_all:
     subset:
-      # - photoz_bpz  # TODO: enable after rail-bpz RFC
+      - photoz_bpz
       - photoz_knn
       - photoz_trainz
     description: |

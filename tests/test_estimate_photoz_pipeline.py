@@ -24,9 +24,11 @@ import tempfile
 import unittest
 from typing import Any
 
+import lsst.meas.photoz.base.all_algos as all_algos
 from lsst.daf.butler import Butler, Config
 from lsst.daf.butler.tests import DatastoreMock
 from lsst.daf.butler.tests.utils import makeTestTempDir, removeTestTempDir
+from lsst.meas.photoz.base.estimate_photoz_task import EstimatePhotozConnections, photozAlgoRegistry
 from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester
 
 PIPELINES_DIR = os.path.join(os.path.dirname(__file__), "..", "pipelines")
@@ -68,22 +70,25 @@ class MeasPzPipelineTestCase(unittest.TestCase):
     def test_photoz_pipeline(self) -> None:
         butler = self.makeButler(writeable=True)
 
+        expected_inputs = ["object"]
+        expected_outputs = []
+        inputs = [("object", {"skymap", "tract"}, "ArrowAstropy", False)]
+        names = list(photozAlgoRegistry.keys())
+        tasks = list(photozAlgoRegistry.values())
+        assert len(names) == len(all_algos.__all__)
+        assert set(tasks) == set([getattr(all_algos, attr) for attr in all_algos.__all__])
+
+        for algo in names:
+            dataset = EstimatePhotozConnections.photoz_model.name.format(algo=algo)
+            expected_inputs.append(dataset)
+            expected_outputs.append(EstimatePhotozConnections.photoz_ensemble.name.format(algo=algo))
+            inputs.append((dataset, {"instrument"}, "PhotozModel", True))
+
         tester = PipelineStepTester(
             os.path.join(PIPELINES_DIR, "photoz.yaml"),
             ["#photoz_all"],
-            [
-                ("object", {"skymap", "tract"}, "ArrowAstropy", False),
-                ("photozModel_trainz", {"instrument"}, "PhotozModel", True),
-                ("photozModel_knn", {"instrument"}, "PhotozModel", True),
-            ],
-            expected_inputs={
-                "object",
-                "photozModel_knn",
-                "photozModel_trainz",
-            },
-            expected_outputs={
-                "photoz_estimate_knn",
-                "photoz_estimate_trainz",
-            },
+            inputs,
+            expected_inputs=set(expected_inputs),
+            expected_outputs=set(expected_outputs),
         )
         tester.run(butler, self)

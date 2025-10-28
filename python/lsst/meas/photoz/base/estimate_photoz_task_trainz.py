@@ -31,11 +31,14 @@ from astropy.table import Table
 from rail.estimation.algos.train_z import TrainZEstimator
 from rail.estimation.estimator import CatEstimator
 
+import lsst.pex.config as pexConfig
+
 from .estimate_photoz_task import (
     EstimatePhotozAlgoConfigBase,
     EstimatePhotozAlgoTask,
     EstimatePhotozTask,
     EstimatePhotozTaskConfig,
+    photozAlgoRegistry,
 )
 
 
@@ -46,10 +49,18 @@ class EstimatePhotozTrainZAlgoConfig(EstimatePhotozAlgoConfigBase):
     def estimator_class(cls) -> type[CatEstimator]:
         return TrainZEstimator
 
+    @classmethod
+    def stage_name(cls):
+        return "trainz"
+
+    def setDefaults(self):
+        self.band_a_env = {"i": 2.06}
+
 
 EstimatePhotozTrainZAlgoConfig._make_fields()
 
 
+@pexConfig.registerConfigurable(EstimatePhotozTrainZAlgoConfig.stage_name(), photozAlgoRegistry)
 class EstimatePhotozTrainZAlgoTask(EstimatePhotozAlgoTask):
     """Subtask to run RAIL TrainZ algorithm for p(z) estimation.
 
@@ -68,8 +79,8 @@ class EstimatePhotozTrainZAlgoTask(EstimatePhotozAlgoTask):
         fluxes: Table,
         mag_offset: float,
     ) -> dict[str, np.ndarray]:
-        flux_names = self._get_flux_names()
-        mag_names = self._get_mag_names()
+        flux_names = self.config.get_flux_names()
+        mag_names = self.config.get_mag_names()
 
         mag_dict = {}
         # loop over bands, make mags and mag errors and fill dict
@@ -87,10 +98,10 @@ class EstimatePhotozTrainZConfig(EstimatePhotozTaskConfig):
     """Config for EstimatePhotozTrainZTask."""
 
     def setDefaults(self) -> None:
-        self.photoz_algo.retarget(EstimatePhotozTrainZAlgoTask)
-        self.photoz_algo.stage_name = "trainz"
-        self.photoz_algo.output_mode = "return"
-        self.photoz_algo.band_a_env = dict(i=2.06)
+        super().setDefaults()
+        name = EstimatePhotozTrainZAlgoConfig.stage_name()
+        self.connections.algo = name
+        self.photoz_algo = name
 
 
 class EstimatePhotozTrainZTask(EstimatePhotozTask):

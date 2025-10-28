@@ -26,6 +26,14 @@ import pytest
 from lsst.meas.photoz.base.estimate_photoz_task import EstimatePhotozAlgoConfigBase, EstimatePhotozAlgoTask
 
 
+class EstimatePhotozAlgoConfigTest(EstimatePhotozAlgoConfigBase):
+    """A half-complete photo-z algo class."""
+
+    @classmethod
+    def stage_name(cls) -> str:
+        return "Test"
+
+
 @pytest.fixture(scope="module")
 def fluxes():
     """Return logarithmically-spaced fluxes."""
@@ -64,5 +72,11 @@ def test_flux_err_to_mag_err(fluxes, flux_errors, magnitude_errors):
 
 def test_algo_config():
     """Test default initialization of base config class."""
-    config = EstimatePhotozAlgoConfigBase(stage_name="test")
+    config = EstimatePhotozAlgoConfigBase()
     config.validate()
+    with pytest.raises(NotImplementedError):
+        config.stage_name()
+    config = EstimatePhotozAlgoConfigTest()
+    config.validate()
+    with pytest.raises(NotImplementedError):
+        config.estimator_class()

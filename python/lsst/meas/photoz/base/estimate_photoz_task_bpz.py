@@ -19,9 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from rail.estimation.algos.bpz_lite import BPZliteEstimator
-from rail.estimation.estimator import CatEstimator
-
 __all__ = [
     "EstimatePhotozBPZAlgoConfig",
     "EstimatePhotozBPZAlgoTask",
@@ -29,11 +26,17 @@ __all__ = [
     "EstimatePhotozBPZTask",
 ]
 
+from rail.estimation.algos.bpz_lite import BPZliteEstimator
+from rail.estimation.estimator import CatEstimator
+
+import lsst.pex.config as pexConfig
+
 from .estimate_photoz_task import (
     EstimatePhotozAlgoConfigBase,
     EstimatePhotozAlgoTask,
     EstimatePhotozTask,
     EstimatePhotozTaskConfig,
+    photozAlgoRegistry,
 )
 
 
@@ -44,10 +47,27 @@ class EstimatePhotozBPZAlgoConfig(EstimatePhotozAlgoConfigBase):
     def estimator_class(cls) -> type[CatEstimator]:
         return BPZliteEstimator
 
+    @classmethod
+    def stage_name(cls):
+        return "bpz"
+
+    def _finalize(self):
+        super()._finalize()
+        if not self.filter_list:
+            self.filter_list = [f"DC2LSST_{band}" for band in self.bands_to_convert]
+        if not self.zp_errors:
+            self.zp_errors = [0.1] * len(self.filter_list)
+
+    def setDefaults(self):
+        super().setDefaults()
+        self.filter_list = []
+        self.zp_errors = []
+
 
 EstimatePhotozBPZAlgoConfig._make_fields()
 
 
+@pexConfig.registerConfigurable(EstimatePhotozBPZAlgoConfig.stage_name(), photozAlgoRegistry)
 class EstimatePhotozBPZAlgoTask(EstimatePhotozAlgoTask):
     """Subtask to run RAIL BPZ algorithm for p(z) estimation.
 
@@ -63,24 +83,10 @@ class EstimatePhotozBPZConfig(EstimatePhotozTaskConfig):
     """Config for EstimatePhotozBPZTask."""
 
     def setDefaults(self) -> None:
-        self.photoz_algo.retarget(EstimatePhotozBPZAlgoTask)
-        self.photoz_algo.stage_name = "bpz"
-        self.photoz_algo.output_mode = "return"
-        self.photoz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.photoz_algo.ref_band = self.photoz_algo.mag_template.format(band="i")
-        self.photoz_algo.bands = self.photoz_algo.get_mag_name_list()
-        self.photoz_algo.err_bands = self.photoz_algo.get_mag_err_name_list()
-        self.photoz_algo.mag_limits = self.photoz_algo.get_mag_lim_dict()
-        self.photoz_algo.filter_list = [
-            "DC2LSST_u",
-            "DC2LSST_g",
-            "DC2LSST_r",
-            "DC2LSST_i",
-            "DC2LSST_z",
-            "DC2LSST_y",
-        ]
-        self.photoz_algo.zp_errors = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-        self.photoz_algo.band_a_env = self.photoz_algo.get_band_a_env_dict()
+        super().setDefaults()
+        name = EstimatePhotozBPZAlgoConfig.stage_name()
+        self.connections.algo = name
+        self.photoz_algo = name
 
 
 class EstimatePhotozBPZTask(EstimatePhotozTask):

@@ -29,11 +29,14 @@ __all__ = [
 from rail.estimation.algos.k_nearneigh import KNearNeighEstimator
 from rail.estimation.estimator import CatEstimator
 
+import lsst.pex.config as pexConfig
+
 from .estimate_photoz_task import (
     EstimatePhotozAlgoConfigBase,
     EstimatePhotozAlgoTask,
     EstimatePhotozTask,
     EstimatePhotozTaskConfig,
+    photozAlgoRegistry,
 )
 
 
@@ -48,10 +51,15 @@ class EstimatePhotozKNNAlgoConfig(EstimatePhotozAlgoConfigBase):
     def estimator_class(cls) -> type[CatEstimator]:
         return KNearNeighEstimator
 
+    @classmethod
+    def stage_name(cls):
+        return "knn"
+
 
 EstimatePhotozKNNAlgoConfig._make_fields()
 
 
+@pexConfig.registerConfigurable(EstimatePhotozKNNAlgoConfig.stage_name(), photozAlgoRegistry)
 class EstimatePhotozKNNAlgoTask(EstimatePhotozAlgoTask):
     """Subtask to run RAIL KNN algorithm for p(z) estimation.
 
@@ -67,14 +75,10 @@ class EstimatePhotozKNNConfig(EstimatePhotozTaskConfig):
     """Config for EstimatePhotozKNNTask."""
 
     def setDefaults(self) -> None:
-        self.photoz_algo.retarget(EstimatePhotozKNNAlgoTask)
-        self.photoz_algo.stage_name = "knn"
-        self.photoz_algo.output_mode = "return"
-        self.photoz_algo.bands_to_convert = ["u", "g", "r", "i", "z", "y"]
-        self.photoz_algo.ref_band = self.photoz_algo.mag_template.format(band="i")
-        self.photoz_algo.bands = self.photoz_algo.get_mag_name_list()
-        self.photoz_algo.mag_limits = self.photoz_algo.get_mag_lim_dict()
-        self.photoz_algo.band_a_env = self.photoz_algo.get_band_a_env_dict()
+        super().setDefaults()
+        name = EstimatePhotozKNNAlgoConfig.stage_name()
+        self.connections.algo = name
+        self.photoz_algo = name
 
 
 class EstimatePhotozKNNTask(EstimatePhotozTask):
