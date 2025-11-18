@@ -1,4 +1,4 @@
-# This file is part of meas.photoz.base.
+# This file is part of meas_photoz_base.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -54,6 +54,7 @@ class EstimatePhotozTrainZAlgoConfig(EstimatePhotozAlgoConfigBase):
         return "trainz"
 
     def setDefaults(self):
+        super().setDefaults()
         self.band_a_env = {"i": 2.06}
 
 

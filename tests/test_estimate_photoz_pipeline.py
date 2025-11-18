@@ -75,8 +75,9 @@ class MeasPzPipelineTestCase(unittest.TestCase):
         inputs = [("object", {"skymap", "tract"}, "ArrowAstropy", False)]
         names = list(photozAlgoRegistry.keys())
         tasks = list(photozAlgoRegistry.values())
-        assert len(names) == len(all_algos.__all__)
-        assert set(tasks) == set([getattr(all_algos, attr) for attr in all_algos.__all__])
+        all_tasks = [x for x in all_algos.__all__ if x != "photozAlgoRegistry"]
+        assert len(names) == len(all_tasks)
+        assert set(tasks) == set([getattr(all_algos, attr) for attr in all_tasks])
 
         for algo in names:
             dataset = EstimatePhotozConnections.photoz_model.name.format(algo=algo)

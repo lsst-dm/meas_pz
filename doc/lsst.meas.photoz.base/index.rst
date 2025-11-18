@@ -2,16 +2,25 @@
 
 .. _lsst.meas.photoz.base:
 
-############
+#####################
 lsst.meas.photoz.base
-############
+#####################
 
-.. Paragraph that describes what this Python module does and links to related modules and frameworks.
+meas_photoz_base contains classes and tasks for running photometric redshift estimation algorithms on LSST catalogs.
 
-.. .. _lsst.meas.photoz.base-using:
+meas_photoz_base relies on the DESC `Redshift Assessment Infrastructure Layers (RAIL) <https://github.com/LSSTDESC/rail/>`_ framework to provide implementations of algorithms and to parameterize/quantize probability distributions.
 
-.. Using lsst.meas.photoz.base
-.. ==================
+Currently, meas_photoz_base only provides tasks for a limited number of algorithms with prerequisite packages available in the `lsst_distrib` environment.
+More are available from `meas_photoz_algorithms <https://github.com/lsst-dm/meas_photoz_algorithms>`_.
+
+.. _lsst.meas.photoz.base-using:
+
+Using lsst.meas.photoz.base
+===========================
+
+Consult the unit tests and/or the pipelines in `drp_pipe <https://github.com/lsst/drp_pipe>`_ for suggested usage.
+
+To populate the `photozAlgoRegistry`, import from `lsst.meas.photoz.base.all_algos`.
 
 .. toctree linking to topics related to using the module's APIs.
 
@@ -23,8 +32,9 @@ lsst.meas.photoz.base
 Contributing
 ============
 
-``lsst.meas.photoz.base`` is developed at https://github.com/lsst-dm/meas_photoz_base.
-You can find Jira issues for this module under the `meas_photoz_base <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20meas_photoz_base>`_ component.
+``lsst.meas.photoz.base`` is developed at https://github.com/lsst/meas_photoz_base.
+You can find Jira issues for this module under the `meas_photoz_base <https://rubinobs.atlassian.net/issues/?jql=component%20%3D%20meas_photoz_base>`_ component.
+
 
 .. If there are topics related to developing this module (rather than using it), link to this from a toctree placed here.
 

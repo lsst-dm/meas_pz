@@ -1,4 +1,4 @@
-# This file is part of meas.photoz.base.
+# This file is part of meas_photoz_base.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from .estimate_photoz_task import photozAlgoRegistry
 from .estimate_photoz_task_bpz import EstimatePhotozBPZAlgoTask
 from .estimate_photoz_task_knn import EstimatePhotozKNNAlgoTask
 from .estimate_photoz_task_trainz import EstimatePhotozTrainZAlgoTask
@@ -27,4 +28,5 @@ __all__ = [
     "EstimatePhotozBPZAlgoTask",
     "EstimatePhotozKNNAlgoTask",
     "EstimatePhotozTrainZAlgoTask",
+    "photozAlgoRegistry",
 ]

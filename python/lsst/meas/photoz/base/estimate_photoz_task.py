@@ -1,4 +1,4 @@
-# This file is part of meas.photoz.base.
+# This file is part of meas_photoz_base.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -29,7 +29,6 @@ __all__ = [
     "photozAlgoRegistry",
 ]
 
-import dataclasses
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -54,19 +53,13 @@ from lsst.pipe.base import (
 
 class EstimatePhotozConnections(
     PipelineTaskConnections,
-    dimensions=[],
+    dimensions=("skymap", "tract"),
     defaultTemplates={"algo": "trainz"},
 ):
     """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
     an object table as input, and create a p(z) file in 'qp' format.
-
-    Parameters
-    ----------
-    config : `EstimatePZTaskConfig`
-        A `EstimatePZTaskConfig` class instance whose class has been configured
-        to use this `PipelineTaskConnections` class.
     """
 
     photoz_model = cT.PrerequisiteInput(
@@ -80,7 +73,7 @@ class EstimatePhotozConnections(
         doc="Object table",
         name="object",
         storageClass="ArrowAstropy",
-        dimensions=[],
+        dimensions=("skymap", "tract"),
         deferLoad=True,
     )
 
@@ -88,13 +81,8 @@ class EstimatePhotozConnections(
         doc="Per-object p(z) estimates",
         name="photoz_ensemble_{algo}",
         storageClass="QPEnsemble",
-        dimensions=[],
+        dimensions=("skymap", "tract"),
     )
-
-    def __init__(self, *, config: EstimatePhotozTaskConfig = None):
-        self.dimensions = set(config.dimensions)
-        self.objects = dataclasses.replace(self.objects, dimensions=set(config.dimensions))
-        self.photoz_ensemble = dataclasses.replace(self.photoz_ensemble, dimensions=set(config.dimensions))
 
 
 class EstimatePhotozAlgoConfigBase(
@@ -113,12 +101,14 @@ class EstimatePhotozAlgoConfigBase(
     @classmethod
     @abstractmethod
     def estimator_class(cls) -> type[CatEstimator]:
+        """Return the type of the estimator's RAIL class."""
         raise NotImplementedError("Subclasses must specify an estimator class")
 
     # This should be a property but py3.13+ don't allow it
     @classmethod
     @abstractmethod
     def stage_name(cls) -> str:
+        """Return the RAIL stage name for the estimator."""
         raise NotImplementedError("Subclasses must define a RAIL stage name")
 
     # Extinction coefficients; see https://ui.adsabs.harvard.edu/abs/1989ApJ...345..245C/abstract
@@ -554,12 +544,6 @@ class EstimatePhotozAlgoTask(Task, ABC):
 class EstimatePhotozTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePhotozConnections):
     """Configuration for EstimatePhotozTask PipelineTask."""
 
-    dimensions = pexConfig.ListField[str](
-        "Dimensions of this task and its inputs and outputs.",
-        dtype=str,
-        default=["skymap", "tract"],
-    )
-
     photoz_algo = photozAlgoRegistry.makeField(
         doc="Algorithm specific configuration p(z) estimation task",
     )
@@ -594,6 +578,7 @@ class EstimatePhotozTask(PipelineTask):
 
     def run(
         self,
+        *,
         photoz_model: Model,
         fluxes: Table,
         skip_init: bool = False,
