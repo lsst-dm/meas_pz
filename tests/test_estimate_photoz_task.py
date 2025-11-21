@@ -1,4 +1,4 @@
-# This file is part of meas_pz
+# This file is part of meas_photoz_base
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -23,7 +23,15 @@
 import numpy as np
 import pytest
 
-from lsst.meas.pz.estimate_pz_task import EstimatePZAlgoConfigBase, EstimatePZAlgoTask
+from lsst.meas.photoz.base.estimate_photoz_task import EstimatePhotozAlgoConfigBase, EstimatePhotozAlgoTask
+
+
+class EstimatePhotozAlgoConfigTest(EstimatePhotozAlgoConfigBase):
+    """A half-complete photo-z algo class."""
+
+    @classmethod
+    def stage_name(cls) -> str:
+        return "Test"
 
 
 @pytest.fixture(scope="module")
@@ -52,17 +60,23 @@ def magnitude_errors(fluxes, flux_errors):
 
 def test_flux_to_mag(fluxes, magnitudes):
     """Test flux to magnitude conversions."""
-    mags_convert = EstimatePZAlgoTask._flux_to_mag(fluxes, 31.4, np.nan)
+    mags_convert = EstimatePhotozAlgoTask._flux_to_mag(fluxes, 31.4, np.nan)
     assert np.allclose(mags_convert, magnitudes, atol=1e-10, rtol=1e-12)
 
 
 def test_flux_err_to_mag_err(fluxes, flux_errors, magnitude_errors):
     """Test flux error to magnitude error conversions."""
-    mags_convert = EstimatePZAlgoTask._flux_err_to_mag_err(fluxes, flux_errors, mag_conv=np.log(10) * 0.4)
+    mags_convert = EstimatePhotozAlgoTask._flux_err_to_mag_err(fluxes, flux_errors, mag_conv=np.log(10) * 0.4)
     assert np.allclose(mags_convert, magnitude_errors, atol=1e-10, rtol=1e-12)
 
 
 def test_algo_config():
     """Test default initialization of base config class."""
-    config = EstimatePZAlgoConfigBase(stage_name="test")
+    config = EstimatePhotozAlgoConfigBase()
     config.validate()
+    with pytest.raises(NotImplementedError):
+        config.stage_name()
+    config = EstimatePhotozAlgoConfigTest()
+    config.validate()
+    with pytest.raises(NotImplementedError):
+        config.estimator_class()

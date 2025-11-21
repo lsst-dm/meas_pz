@@ -1,4 +1,4 @@
-# This file is part of meas_pz.
+# This file is part of meas_photoz_base.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -22,13 +22,13 @@
 from __future__ import annotations
 
 __all__ = [
-    "EstimatePZAlgoConfigBase",
-    "EstimatePZAlgoTask",
-    "EstimatePZTask",
-    "EstimatePZTaskConfig",
+    "EstimatePhotozAlgoConfigBase",
+    "EstimatePhotozAlgoTask",
+    "EstimatePhotozTask",
+    "EstimatePhotozTaskConfig",
+    "photozAlgoRegistry",
 ]
 
-import dataclasses
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -51,40 +51,41 @@ from lsst.pipe.base import (
 )
 
 
-class EstimatePZConnections(PipelineTaskConnections, dimensions=[]):
+class EstimatePhotozConnections(
+    PipelineTaskConnections,
+    dimensions=("skymap", "tract"),
+    defaultTemplates={"algo": "trainz"},
+):
     """Connections for tasks that make p(z) estimates.
 
     These will take pickled model file as a "calibration-like" input,
-    an objectTable as input, and create a p(z) file in 'qp' format.
+    an object table as input, and create a p(z) file in 'qp' format.
     """
 
-    pzModel = cT.PrerequisiteInput(
+    photoz_model = cT.PrerequisiteInput(
         doc="Model for PZ Estimation",
-        name="pzModel",
-        storageClass="PZModel",
+        name="photoz_model_{algo}",
+        storageClass="PhotozModel",
         dimensions=["instrument"],
         isCalibration=True,
     )
-
-    objectTable = cT.Input(
+    objects = cT.Input(
         doc="Object table",
         name="object",
         storageClass="ArrowAstropy",
-        dimensions=[],
+        dimensions=("skymap", "tract"),
         deferLoad=True,
     )
 
-    pzEnsemble = cT.Output(
-        doc="Per-object p(z) estimates", name="pzEnsemble", storageClass="QPEnsemble", dimensions=[]
+    photoz_ensemble = cT.Output(
+        doc="Per-object p(z) estimates",
+        name="photoz_ensemble_{algo}",
+        storageClass="QPEnsemble",
+        dimensions=("skymap", "tract"),
     )
 
-    def __init__(self, *, config: EstimatePZTaskConfig = None):
-        self.dimensions = set(config.dimensions)
-        self.objectTable = dataclasses.replace(self.objectTable, dimensions=set(config.dimensions))
-        self.pzEnsemble = dataclasses.replace(self.pzEnsemble, dimensions=set(config.dimensions))
 
-
-class EstimatePZAlgoConfigBase(
+class EstimatePhotozAlgoConfigBase(
     pexConfig.Config,
 ):
     """Base class for configurations of algorithm-specific p(z)
@@ -93,14 +94,22 @@ class EstimatePZAlgoConfigBase(
     This class mostly just translates the RAIL configuration
     parameters to pex.config parameters.
 
-    Subclasses will just have to set
-    `estimator_class` and invoke _make_fields.
+    Subclasses will just have to set `estimator_class` and `stage_name`
+    and invoke `_make_fields` once in the module.
     """
 
     @classmethod
     @abstractmethod
     def estimator_class(cls) -> type[CatEstimator]:
-        raise NotImplementedError()
+        """Return the type of the estimator's RAIL class."""
+        raise NotImplementedError("Subclasses must specify an estimator class")
+
+    # This should be a property but py3.13+ don't allow it
+    @classmethod
+    @abstractmethod
+    def stage_name(cls) -> str:
+        """Return the RAIL stage name for the estimator."""
+        raise NotImplementedError("Subclasses must define a RAIL stage name")
 
     # Extinction coefficients; see https://ui.adsabs.harvard.edu/abs/1989ApJ...345..245C/abstract
     # Also in rail.utils.catalog_utils.RubinCatalogConfig.a_env
@@ -144,23 +153,34 @@ class EstimatePZAlgoConfigBase(
     def get_mag_lim_dict(self):
         """Return the set of maglims to use."""
         return {
-            self.mag_template.format(band=band_): self.default_mag_limit_values[band_]
-            for band_ in self.bands_to_convert
+            self.mag_template.format(band=band): self.default_mag_limit_values[band]
+            for band in self.bands_to_convert
         }
 
-    def get_mag_name_list(self):
-        """Return the set of band names."""
-        return [self.mag_template.format(band=band_) for band_ in self.bands_to_convert]
+    def get_flux_names(self) -> dict[str, str]:
+        """Return a dict mapping band to flux column name."""
+        return {band: self.flux_column_template.format(band=band) for band in self.bands_to_convert}
 
-    def get_mag_err_name_list(self):
-        """Return the set of band names."""
-        return [self.mag_err_template.format(band=band_) for band_ in self.bands_to_convert]
+    def get_flux_err_names(self) -> dict[str, str]:
+        """Return a dict mapping band to flux error column name."""
+        return {band: self.flux_err_column_template.format(band=band) for band in self.bands_to_convert}
 
-    stage_name = pexConfig.Field(doc="Rail stage name", dtype=str)
+    def get_mag_names(self) -> dict[str, str]:
+        """Return a dict mapping band to mag column name."""
+        return {band: self.mag_template.format(band=band) for band in self.bands_to_convert}
+
+    def get_mag_err_names(self) -> dict[str, str]:
+        """Return a dict mapping band to mag error column name."""
+        return {band: self.mag_err_template.format(band=band) for band in self.bands_to_convert}
+
     mag_offset = pexConfig.Field(doc="Magnitude offset", dtype=float, default=31.4)
     deredden = pexConfig.Field[bool](
         doc="Apply dereddening",
         default=True,
+    )
+    band_ref = pexConfig.Field[str](
+        doc="Name of the most reliable reference band, if needed",
+        default="i",
     )
     bands_to_convert = pexConfig.ListField[str](
         doc="Names of bands to convert fluxs to mags for RAIL",
@@ -194,6 +214,25 @@ class EstimatePZAlgoConfigBase(
         doc="Reddening parameters",
         default=default_a_env_values,
     )
+
+    def freeze(self):
+        if not self._frozen:
+            self._finalize()
+        super().freeze()
+
+    def _finalize(self):
+        # These calls will fail if it's already frozen.
+        if hasattr(self, "ref_band"):
+            self.ref_band = self.mag_template.format(band=self.band_ref)
+        if hasattr(self, "bands"):
+            # This is a list of mag columns in RAIL, not bands
+            self.bands = list(self.get_mag_names().values())
+        if hasattr(self, "err_bands"):
+            self.err_bands = list(self.get_mag_err_names().values())
+        if hasattr(self, "mag_limits"):
+            self.mag_limits = self.get_mag_lim_dict()
+        if hasattr(self, "band_a_env"):
+            self.band_a_env = self.get_band_a_env_dict()
 
     @classmethod
     def _make_fields(cls) -> None:
@@ -248,7 +287,12 @@ class EstimatePZAlgoConfigBase(
         cls.__fields_made__ = True
 
 
-class EstimatePZAlgoTask(Task, ABC):
+photozAlgoRegistry = pexConfig.makeRegistry(
+    doc="A registry of photometric redshift estimation algorithm subtasks",
+)
+
+
+class EstimatePhotozAlgoTask(Task, ABC):
     """Task for algorithm-specific p(z) estimation.
 
     This provides almost all of the functionality
@@ -260,7 +304,7 @@ class EstimatePZAlgoTask(Task, ABC):
         Additional keyword arguments to pass to super().__init__.
     """
 
-    ConfigClass = EstimatePZAlgoConfigBase
+    ConfigClass = EstimatePhotozAlgoConfigBase
 
     mag_conv = np.log(10) * 0.4
 
@@ -371,27 +415,6 @@ class EstimatePZAlgoTask(Task, ABC):
             data[mag_name] = dered_mag
         return data
 
-    def _get_flux_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux column name."""
-        return {
-            band: self.config.flux_column_template.format(band=band) for band in self.config.bands_to_convert
-        }
-
-    def _get_flux_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to flux error column name."""
-        return {
-            band: self.config.flux_err_column_template.format(band=band)
-            for band in self.config.bands_to_convert
-        }
-
-    def _get_mag_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag column name."""
-        return {band: self.config.mag_template.format(band=band) for band in self.config.bands_to_convert}
-
-    def _get_mag_err_names(self) -> dict[str, str]:
-        """Return a dict mapping band to mag error column name."""
-        return {band: self.config.mag_err_template.format(band=band) for band in self.config.bands_to_convert}
-
     def _get_mags_and_errs(
         self,
         fluxes: Table,
@@ -413,10 +436,10 @@ class EstimatePZAlgoTask(Task, ABC):
             Numpy dict with mags and mag errors
         """
         # get all the column names we will use
-        flux_names = self._get_flux_names()
-        mag_names = self._get_mag_names()
-        flux_err_names = self._get_flux_err_names()
-        mag_err_names = self._get_mag_err_names()
+        flux_names = self.config.get_flux_names()
+        mag_names = self.config.get_mag_names()
+        flux_err_names = self.config.get_flux_err_names()
+        mag_err_names = self.config.get_mag_err_names()
         nondetect_val = self.config.nondetect_val
         # output dict
         mag_dict = {}
@@ -442,13 +465,13 @@ class EstimatePZAlgoTask(Task, ABC):
 
     def init(
         self,
-        pzModel: Model,
+        photoz_model: Model,
     ) -> None:
         """Set up the RAIL stage to compute photo-zs.
 
         Parameters
         ----------
-        pzModel : Model
+        photoz_model : Model
             Model used by the p(z) estimation algorithm.
         """
         # pop the pipeline task config options
@@ -460,9 +483,9 @@ class EstimatePZAlgoTask(Task, ABC):
 
         # Build the RAIL stage
         self._stage = PZFactory.build_stage_instance(
-            self.config.stage_name,
+            self.config.stage_name(),
             self.config.estimator_class(),
-            model_path=pzModel.data,
+            model_path=photoz_model.data,
             input_path="dummy.in",
             **rail_kwargs,
         )
@@ -472,11 +495,13 @@ class EstimatePZAlgoTask(Task, ABC):
         self,
     ) -> list[str]:
         """Get the list of column names to read from the input data."""
-        the_col_names = list(self._get_flux_names().values()) + list(self._get_flux_err_names().values())
+        columns = list(self.config.get_flux_names().values()) + list(
+            self.config.get_flux_err_names().values()
+        )
         if self.config.deredden:
-            the_col_names += ["ebv"]
+            columns += ["ebv"]
 
-        return the_col_names
+        return columns
 
     def run(
         self,
@@ -491,7 +516,7 @@ class EstimatePZAlgoTask(Task, ABC):
 
         Returns
         -------
-        pz_pdfs : qp.Ensemble
+        photoz_pdfs : qp.Ensemble
             Object with the p(z) PDFs.
         """
         n_obj = len(fluxes)
@@ -506,32 +531,25 @@ class EstimatePZAlgoTask(Task, ABC):
             mags = self._deredden_mags(
                 mags,
                 self.config.band_a_env,
-                self._get_mag_names(),
+                self.config.get_mag_names(),
                 nondetect_val,
             )
 
         # Pass the mags to RAIL and get back the p(z) pdfs
         # as a qp.Ensemble object
-        pz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)
-        return Struct(pzEnsemble=pz_pdfs)
+        photoz_pdfs = PZFactory.estimate_single_pz(self._stage, mags, n_obj)
+        return Struct(photoz_ensemble=photoz_pdfs)
 
 
-class EstimatePZTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePZConnections):
-    """Configuration for EstimatePZTask PipelineTask."""
+class EstimatePhotozTaskConfig(PipelineTaskConfig, pipelineConnections=EstimatePhotozConnections):
+    """Configuration for EstimatePhotozTask PipelineTask."""
 
-    dimensions = pexConfig.ListField[str](
-        "Dimensions of this task and its inputs and outputs.",
-        dtype=str,
-        default=["skymap", "tract"],
-    )
-
-    pz_algo = pexConfig.ConfigurableField(
-        target=EstimatePZAlgoTask,
+    photoz_algo = photozAlgoRegistry.makeField(
         doc="Algorithm specific configuration p(z) estimation task",
     )
 
 
-class EstimatePZTask(PipelineTask):
+class EstimatePhotozTask(PipelineTask):
     """PipelineTask for p(z) estimation.
 
     Parameters
@@ -542,31 +560,32 @@ class EstimatePZTask(PipelineTask):
         Additional keyword arguments to pass to super().__init__.
     """
 
-    ConfigClass = EstimatePZTaskConfig
-    _DefaultName = "estimatePZ"
+    ConfigClass = EstimatePhotozTaskConfig
+    _DefaultName = "estimatePhotoz"
 
     def __init__(self, initInputs: dict, **kwargs):
         super().__init__(initInputs=initInputs, **kwargs)
         self._initialized = False
-        self.makeSubtask("pz_algo")
+        self.makeSubtask("photoz_algo")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
-        inputs["fluxes"] = inputs.pop("objectTable").get(
-            parameters=dict(columns=self.pz_algo.col_names()),
+        inputs["fluxes"] = inputs.pop("objects").get(
+            parameters=dict(columns=self.photoz_algo.col_names()),
         )
         outputs = self.run(**inputs, skip_init=self._initialized)
         butlerQC.put(outputs, outputRefs)
 
     def run(
         self,
-        pzModel: Model,
+        *,
+        photoz_model: Model,
         fluxes: Table,
         skip_init: bool = False,
     ) -> Struct:
         if not skip_init:
             self._initialized = True
-            self.pz_algo.init(pzModel)
+            self.photoz_algo.init(photoz_model)
 
-        ret_struct = self.pz_algo.run(fluxes)
-        return Struct(pzEnsemble=ret_struct.pzEnsemble)
+        ret_struct = self.photoz_algo.run(fluxes)
+        return Struct(photoz_ensemble=ret_struct.photoz_ensemble)

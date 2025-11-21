@@ -1,4 +1,4 @@
-# This file is part of meas_pz
+# This file is part of meas_photoz_base
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -20,10 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from lsst.meas.pz.estimate_pz_task_knn import EstimatePZKNNConfig
+from lsst.meas.photoz.base.estimate_photoz_task_knn import EstimatePhotozKNNConfig
 
 
 def test_algo_config():
     """Test default initialization of KNN config class."""
-    config = EstimatePZKNNConfig()
+    config = EstimatePhotozKNNConfig()
     config.validate()

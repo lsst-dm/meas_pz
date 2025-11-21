@@ -1,27 +1,17 @@
 description: |
-  Estimate photometric redshifts
+  Estimate photometric redshifts with all base algorithms
 tasks:
-  # TODO: enable after rail-bpz RFC
-  # pz_bpz:
-  #  class: lsst.meas.pz.estimate_pz_task_bpz.EstimatePZBPZTask
-  #  config:
-  #    connections.pzModel: 'pzModel_bpz'
-  #    connections.pzEnsemble: 'pz_estimate_bpz'
-  pz_knn:
-    class: lsst.meas.pz.estimate_pz_task_knn.EstimatePZKNNTask
-    config:
-      connections.pzModel: 'pzModel_knn'
-      connections.pzEnsemble: 'pz_estimate_knn'
-  pz_trainz:
-    class: lsst.meas.pz.estimate_pz_task_trainz.EstimatePZTrainZTask
-    config:
-      connections.pzModel: 'pzModel_trainz'
-      connections.pzEnsemble: 'pz_estimate_trainz'
+  photoz_bpz:
+    class: lsst.meas.photoz.base.estimate_photoz_task_bpz.EstimatePhotozBPZTask
+  photoz_knn:
+    class: lsst.meas.photoz.base.estimate_photoz_task_knn.EstimatePhotozKNNTask
+  photoz_trainz:
+    class: lsst.meas.photoz.base.estimate_photoz_task_trainz.EstimatePhotozTrainZTask
 subsets:
-  all_pz:
+  photoz_all:
     subset:
-      # - pz_bpz  # TODO: enable after rail-bpz RFC
-      - pz_knn
-      - pz_trainz
+      - photoz_bpz
+      - photoz_knn
+      - photoz_trainz
     description: |
       All of the photo-z algorithms

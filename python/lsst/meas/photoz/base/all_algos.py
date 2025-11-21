@@ -1,8 +1,8 @@
-# This file is part of meas_pz
+# This file is part of meas_photoz_base.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
-# (http://www.lsst.org).
+# (https://www.lsst.org).
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
@@ -17,13 +17,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from .estimate_photoz_task import photozAlgoRegistry
+from .estimate_photoz_task_bpz import EstimatePhotozBPZAlgoTask
+from .estimate_photoz_task_knn import EstimatePhotozKNNAlgoTask
+from .estimate_photoz_task_trainz import EstimatePhotozTrainZAlgoTask
 
-from lsst.meas.pz.estimate_pz_task_trainz import EstimatePZTrainZConfig
-
-
-def test_algo_config():
-    """Test default initialization of TrainZ config class."""
-    config = EstimatePZTrainZConfig()
-    config.validate()
+__all__ = [
+    "EstimatePhotozBPZAlgoTask",
+    "EstimatePhotozKNNAlgoTask",
+    "EstimatePhotozTrainZAlgoTask",
+    "photozAlgoRegistry",
+]
