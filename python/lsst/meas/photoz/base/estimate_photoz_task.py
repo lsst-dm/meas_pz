@@ -446,6 +446,8 @@ class EstimatePhotozAlgoTask(Task, ABC):
         nondetect_val = self.config.nondetect_val
         # output dict
         mag_dict = {}
+        if object_id_name := self.config.id_col:
+            mag_dict[object_id_name] = fluxes[object_id_name]
 
         # loop over bands, make mags and mag errors and fill dict
         for band in flux_names.keys():
