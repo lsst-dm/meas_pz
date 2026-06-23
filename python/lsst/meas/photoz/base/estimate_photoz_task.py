@@ -443,6 +443,7 @@ class EstimatePhotozAlgoTask(Task, ABC):
         nondetect_val = self.config.nondetect_val
         # output dict
         mag_dict = {}
+
         # loop over bands, make mags and mag errors and fill dict
         for band in flux_names.keys():
             fluxVals = np.asarray(fluxes[flux_names[band]])
